@@ -8,8 +8,15 @@ function showSection(id) {
 }
 
 async function register() {
-  const username = document.getElementById('auth-user').value;
-  const password = document.getElementById('auth-pass').value;
+  const username = document.getElementById('auth-user').value.trim();
+  const password = document.getElementById('auth-pass').value.trim();
+
+  // Empty Input Check
+  if (!username || !password) {
+    alert('ကျေးဇူးပြု၍ Username နှင့် Password ရိုက်ထည့်ပါ။');
+    return;
+  }
+
   const res = await fetch('/api/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -20,8 +27,15 @@ async function register() {
 }
 
 async function login() {
-  const username = document.getElementById('auth-user').value;
-  const password = document.getElementById('auth-pass').value;
+  const username = document.getElementById('auth-user').value.trim();
+  const password = document.getElementById('auth-pass').value.trim();
+
+  // Empty Input Check
+  if (!username || !password) {
+    alert('ကျေးဇူးပြု၍ Username နှင့် Password ရိုက်ထည့်ပါ။');
+    return;
+  }
+
   const res = await fetch('/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -32,13 +46,14 @@ async function login() {
     currentUser = data.username;
     document.getElementById('auth-container').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
-    document.getElementById('user-display').innerText = `Logged in as: ${currentUser}`;
+    document.getElementById('user-display').innerText = `User: ${currentUser}`;
     joinRoom();
     loadMusic();
   } else {
     alert(data.message);
   }
 }
+
 
 async function saveSettings() {
   const geminiKey = document.getElementById('gemini-key').value;
