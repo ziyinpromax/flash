@@ -3,6 +3,28 @@ let currentUser = '';
 let targetUser = '';
 let allUsers = [];
 
+// Custom Cartoon Popup Modal Logic
+function showModal(icon, title, msg, showProgress = false) {
+  document.getElementById('modal-icon').innerText = icon;
+  document.getElementById('modal-title').innerText = title;
+  document.getElementById('modal-msg').innerText = msg;
+  
+  const progContainer = document.getElementById('progress-container');
+  progContainer.style.display = showProgress ? 'block' : 'none';
+  if (showProgress) updateProgress(0);
+
+  document.getElementById('cartoon-modal').style.display = 'flex';
+}
+
+function updateProgress(percent) {
+  document.getElementById('progress-bar-fill').style.width = percent + '%';
+  document.getElementById('progress-text').innerText = percent + '%';
+}
+
+function closeModal() {
+  document.getElementById('cartoon-modal').style.display = 'none';
+}
+
 function switchTab(paneId, btn) {
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
   document.getElementById(paneId).classList.add('active');
@@ -15,7 +37,7 @@ function switchTab(paneId, btn) {
 async function register() {
   const username = document.getElementById('auth-user').value.trim();
   const password = document.getElementById('auth-pass').value.trim();
-  if (!username || !password) return alert('Username/Password ဖြည့်ပါ။');
+  if (!username || !password) return showModal('⚠️', 'Attention', 'Username နှင့် Password ဖြည့်ပါ!');
 
   const res = await fetch('/api/register', {
     method: 'POST',
@@ -23,13 +45,13 @@ async function register() {
     body: JSON.stringify({ username, password })
   });
   const data = await res.json();
-  alert(data.message);
+  showModal(data.success ? '🎉' : '❌', data.success ? 'Success' : 'Error', data.message);
 }
 
 async function login() {
   const username = document.getElementById('auth-user').value.trim();
   const password = document.getElementById('auth-pass').value.trim();
-  if (!username || !password) return alert('Username/Password ဖြည့်ပါ။');
+  if (!username || !password) return showModal('⚠️', 'Attention', 'Username နှင့် Password ဖြည့်ပါ!');
 
   const res = await fetch('/api/login', {
     method: 'POST',
@@ -41,13 +63,12 @@ async function login() {
     currentUser = data.username;
     document.getElementById('auth-container').style.display = 'none';
     document.getElementById('app-container').style.display = 'flex';
-    document.getElementById('sidebar-user-avatar').innerText = currentUser.charAt(0).toUpperCase();
     
     socket.emit('join_room', 'GlobalGroup');
     loadUsers();
     loadMusic();
   } else {
-    alert(data.message);
+    showModal('❌', 'Login Failed', data.message);
   }
 }
 
@@ -136,44 +157,70 @@ async function sendAiPrompt() {
   logs.innerHTML += `<div class="chat-bubble other"><b>AI:</b> ${data.text || data.error}</div>`;
 }
 
-// Client-side Video Extraction
+// Video Downloader Engine with Progress
 async function downloadVideo() {
   const url = document.getElementById('dl-url').value.trim();
   const resultDiv = document.getElementById('dl-result');
-  if (!url) return alert('Video Link ထည့်ပါ');
-  
-  resultDiv.innerText = 'Extracting link...';
+  if (!url) return showModal('⚠️', 'Attention', 'Video Link ထည့်ပါ');
 
-  try {
-    const response = await fetch('https://api.cobalt.tools/api/json', {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: url })
-    });
-    const data = await response.json();
+  showModal('⏳', 'Extracting Video', 'ဗီဒီယို လင့်ခ် ထုတ်ယူနေပါသည်...', true);
+  updateProgress(40);
 
-    if (data.url) {
-      resultDiv.innerHTML = `<a href="${data.url}" target="_blank"><button class="btn-primary">Click to Download Video</button></a>`;
+  const res = await fetch('/api/download', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url })
+  });
+  const data = await res.json();
+  updateProgress(100);
+
+  setTimeout(() => {
+    closeModal();
+    if (data.success) {
+      resultDiv.innerHTML = `<a href="${data.downloadUrl}" target="_blank"><button class="btn-primary">📥 Click to Download Video</button></a>`;
     } else {
-      resultDiv.innerText = 'Video extraction failed. Please check the URL.';
+      showModal('❌', 'Error', 'Video extraction failed!');
     }
-  } catch (err) {
-    resultDiv.innerText = 'Download error: ' + err.message;
-  }
+  }, 400);
 }
 
-async function uploadMusic() {
+// Music Upload with Exact % Progress Tracking
+function uploadMusic() {
   const fileInput = document.getElementById('music-file');
   const folderName = document.getElementById('folder-name').value.trim() || 'General';
-  if (!fileInput.files[0]) return alert('MP3 ဖိုင် ရွေးချယ်ပါ');
+  if (!fileInput.files[0]) return showModal('⚠️', 'Attention', 'MP3 ဖိုင် ရွေးချယ်ပါ!');
 
   const formData = new FormData();
   formData.append('audio', fileInput.files[0]);
   formData.append('folder', folderName);
 
-  await fetch('/api/music/upload', { method: 'POST', body: formData });
-  document.getElementById('music-file').value = '';
-  loadMusic();
+  showModal('☁️', 'Uploading MP3', 'သီချင်း Upload တင်နေပါသည်...', true);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/music/upload', true);
+
+  xhr.upload.onprogress = function (e) {
+    if (e.lengthComputable) {
+      const percentComplete = Math.round((e.loaded / e.total) * 100);
+      updateProgress(percentComplete);
+    }
+  };
+
+  xhr.onload = function () {
+    if (xhr.status === 200) {
+      setTimeout(() => {
+        closeModal();
+        showModal('🎉', 'Success', 'သီချင်း တင်ခြင်း အောင်မြင်ပါသည်!');
+        document.getElementById('music-file').value = '';
+        loadMusic();
+      }, 300);
+    } else {
+      closeModal();
+      showModal('❌', 'Failed', 'Upload တင်၍ မရပါ!');
+    }
+  };
+
+  xhr.send(formData);
 }
 
 async function loadMusic() {
@@ -214,5 +261,5 @@ async function saveSettings() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ geminiKey, groqKey })
   });
-  alert('API Keys Saved!');
+  showModal('💾', 'Saved', 'API Keys သိမ်းဆည်းပြီးပါပြီ!');
 }
