@@ -8,7 +8,7 @@ Flâsh Pro သည် animated cartoon UI ပါသော chat/web app ဖြစ�
 - Search Friends — Private Chats inbox မှ သီးခြားစာမျက်နှာ
 - Private chat နှင့် Group chat — Socket.IO real-time messaging
 - Persistent login/session, Last Seen/online presence, message receipts (Sending/Sent/Delivered/Seen/Not sent), conversation pin/delete/nickname болон message reply/edit/delete/pin
-- Profile photo, Account Name, lowercase Username, password болон recovery code/name тохиргоо; user ပြောင်းထားသော public profile name/photo ကို chat များတွင် အသုံးပြုခြင်း
+- Profile photo, Account Name, lowercase Username နှင့် login ဝင်ပြီးနောက် password ပြောင်းခြင်း; user ပြောင်းထားသော public profile name/photo ကို chat များတွင် အသုံးပြုခြင်း
 - Persistent AI conversation history — ယခင် chat ကိုပြန်ဖွင့်၍ ထိုစကားဝိုင်းအတိုင်း ဆက်လက်ပြောဆိုနိုင်ခြင်း
 - Video downloader — ကိုယ်တိုင် host လုပ်ထားသော သို့မဟုတ် အသုံးပြုခွင့်ရ Cobalt API instance မှတစ်ဆင့်
 - Music library — audio upload, playback, delete; Supabase Storage ကို ရွေးချယ်အသုံးပြုနိုင်ခြင်း; upload/download/message sending transfer progress
@@ -57,9 +57,9 @@ create table if not exists public.music (
 
 RLS ကို ဖွင့်ထားပြီး `service_role` key ကို server-side တွင်သာ အသုံးပြုပါ။ `anon` access ကို table များအတွက် အများသုံး read/write မဖွင့်ပါနှင့်။ Existing Supabase project တွင် RLS policy/schema ကွဲပြားနေပါက server log နှင့် API response တွင် database error ပြန်စစ်ပါ။
 
-Migration က persistent session, profile/recovery, conversation/message/receipt, AI history, recovery-ticket နှင့် download-ticket tables များအပြင် profile update/password reset/download consume RPC များကိုဖန်တီးပြီး `users` နှင့် `music` columns များကို ထည့်ပေးသည်။ App အသစ်ကို migration မလုပ်မီ မတင်ပါနှင့်။ Session ကို Supabase `app_sessions` ထဲတွင် သိမ်းပြီး အသုံးပြုနေစဉ် သက်တမ်းတိုးသော one-year cookie သတ်မှတ်ထားသည်။ Logout လုပ်သည်အထိ မကြာခဏ login ပြန်မလုပ်ရပါ။ Browser/device မှ cookie ဖယ်ရှားခြင်း၊ administrator က session ကို ဖျက်ခြင်း သို့မဟုတ် တစ်နှစ် အသုံးမပြုဘဲ သက်တမ်းကုန်ခြင်းဖြစ်လျှင် ပြန်ဝင်ရန်လိုနိုင်သည်။
+Migration က persistent session, profile, conversation/message/receipt, AI history နှင့် download-ticket tables များအပြင် profile update/download consume RPC များကိုဖန်တီးပြီး `users` နှင့် `music` columns များကို ထည့်ပေးသည်။ App အသစ်ကို migration မလုပ်မီ မတင်ပါနှင့်။ Session ကို Supabase `app_sessions` ထဲတွင် သိမ်းပြီး အသုံးပြုနေစဉ် သက်တမ်းတိုးသော one-year cookie သတ်မှတ်ထားသည်။ Logout လုပ်သည်အထိ မကြာခဏ login ပြန်မလုပ်ရပါ။ Browser/device မှ cookie ဖယ်ရှားခြင်း၊ administrator က session ကို ဖျက်ခြင်း သို့မဟုတ် တစ်နှစ် အသုံးမပြုဘဲ သက်တမ်းကုန်ခြင်းဖြစ်လျှင် ပြန်ဝင်ရန်လိုနိုင်သည်။
 
-Username ကို စာလုံးအသေး၊ ဂဏန်း၊ `_`, `.`, `-` သင်္ကေတများဖြင့် ၃–၂၄ လုံး သတ်မှတ်ရမည်။ အသစ်သတ်မှတ်သော password သည် ၆–၈ လုံးဖြစ်ရမည်။ အကောင့်ဟောင်းများ၏ password အရှည်ကို login အတွက် လက်ခံထားပြီး login ဝင်ပြီးနောက် ၆–၈ လုံး password အသစ်ပြောင်းနိုင်သည်။ Recovery code/name ကို အသုံးပြုသူကိုယ်တိုင် ရွေးနိုင်ပြီး server တွင် bcrypt hash အဖြစ်သာ သိမ်းသည်။ Username နှင့် recovery code/name မှန်ကန်လျှင် password အသစ် သတ်မှတ်နိုင်သည်။ သိမ်းထားသော hash မှ လက်ရှိ password ကို ပြန်ဖော်ပြ၍မရပါ။ Migration မတိုင်မီ recovery code မသတ်မှတ်ထားသော အကောင့်ဟောင်းများသည် login ဝင်ပြီး Profile မှ recovery code အသစ်သတ်မှတ်ပါ။ ထို code မသတ်မှတ်မီ password မေ့သွားပါက account administrator က သီးခြားအတည်ပြုစစ်ဆေးပြီး reset လုပ်ပေးရမည်။
+Username ကို စာလုံးအသေး၊ ဂဏန်း၊ `_`, `.`, `-` သင်္ကေတများဖြင့် ၃–၂၄ လုံး သတ်မှတ်ရမည်။ အသစ်သတ်မှတ်သော password သည် ၆–၈ လုံးဖြစ်ရမည်။ အကောင့်ဟောင်းများ၏ password အရှည်ကို login အတွက် လက်ခံထားပြီး login ဝင်ပြီးနောက် Profile မှ ၆–၈ လုံး password အသစ်ပြောင်းနိုင်သည်။ မေ့သွားသော password ကို app မှ ပြန်လည်သတ်မှတ်နိုင်သည့် recovery လုပ်ဆောင်ချက် မပါဝင်ပါ။
 
 ### Music storage
 
