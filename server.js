@@ -25,7 +25,7 @@ if (!SESSION_SECRET) {
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zghlmevmxgonupbiszok.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnaGxtZXZteGdvbnVwYmlzem9rIiwiaWF0IjoxNzkxOTY1NjIyLCJleHAiOjIxMDc1NDE2MjJ9.LEMRj1OA5d_1U2y1zpveLD_cTxQdxw3eEjidKbAXWBc';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnaGxtZXZteGdvbnVwYmlzem9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5NjU2MjIsImV4cCI6MjEwNzU0MTYyMn0.LEMRj1OA5d_1U2y1zpveLD_cTxQdxw3eEjidKbAXWBc';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
 const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || '';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
