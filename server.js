@@ -13,6 +13,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Supabase Connection Setup
 const SUPABASE_URL = 'https://zghlmevmxgonupbiszok.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnaGxtZXZteGdvbnVwYmlzem9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5NjU2MjIsImV4cCI6MjEwNzU0MTYyMn0.LEMRj1OA5d_1U2y1zpveLD_cTxQdxw3eEjidKbAXWBc';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -22,25 +23,29 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(session({ secret: 'flashpro_secret_key', resave: false, saveUninitialized: true }));
 
+// File Upload Engine Configuration
 const storage = multer.diskStorage({
   destination: './public/uploads/',
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
 const upload = multer({ storage });
 
-// Auth API
+// 1. AUTHENTICATION API
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.json({ success: false, message: 'Username/Password ဖြည့်ပါ။' });
+  if (!username || !password) return res.json({ success: false, message: 'Username နှင့် Password ဖြည့်ပါ။' });
+  
   const hashedPassword = bcrypt.hashSync(password, 10);
   const { error } = await supabase.from('users').insert([{ username, password: hashedPassword }]);
+  
   if (error) return res.json({ success: false, message: 'Username ရှိပြီးသားဖြစ်နေပါသည်။' });
-  res.json({ success: true, message: 'Account Created Successfully!' });
+  res.json({ success: true, message: 'အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်!' });
 });
 
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.json({ success: false, message: 'Username/Password ဖြည့်ပါ။' });
+  if (!username || !password) return res.json({ success: false, message: 'Username နှင့် Password ဖြည့်ပါ။' });
+  
   const { data: user } = await supabase.from('users').select('*').eq('username', username).single();
   if (user && bcrypt.compareSync(password, user.password)) {
     req.session.user = user.username;
@@ -55,28 +60,31 @@ app.get('/api/users', async (req, res) => {
   res.json(data || []);
 });
 
-// Settings API
+// 2. SETTINGS API (API Keys Storage)
 app.post('/api/settings', async (req, res) => {
   const { geminiKey, groqKey } = req.body;
   if (geminiKey) await supabase.from('settings').upsert({ key: 'gemini_key', value: geminiKey });
   if (groqKey) await supabase.from('settings').upsert({ key: 'groq_key', value: groqKey });
-  res.json({ success: true, message: 'API Keys Saved!' });
+  res.json({ success: true, message: 'API Keys သိမ်းဆည်းပြီးပါပြီ!' });
 });
 
-// AI Chat API
+// 3. AI CHAT ENGINE API
 app.post('/api/ai/chat', async (req, res) => {
   const { provider, prompt } = req.body;
   try {
     if (provider === 'gemini') {
       const { data } = await supabase.from('settings').select('value').eq('key', 'gemini_key').single();
       if (!data?.value) return res.status(400).json({ error: 'Settings တွင် Gemini Key ဖြည့်ပါ' });
+      
       const ai = new GoogleGenAI({ apiKey: data.value });
       const response = await ai.models.generateContent({ model: 'gemini-1.5-flash', contents: prompt });
       return res.json({ text: response.text });
     }
+    
     if (provider === 'groq') {
       const { data } = await supabase.from('settings').select('value').eq('key', 'groq_key').single();
       if (!data?.value) return res.status(400).json({ error: 'Settings တွင် Groq Key ဖြည့်ပါ' });
+      
       const groq = new Groq({ apiKey: data.value });
       const completion = await groq.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
@@ -89,36 +97,32 @@ app.post('/api/ai/chat', async (req, res) => {
   }
 });
 
-// Downloader API (Using Public Cobalt API Engine)
+// 4. VIDEO DOWNLOADER API (TikWM Engine)
 app.post('/api/download', async (req, res) => {
   const { url } = req.body;
   try {
     const fetch = (await import('node-fetch')).default;
-    const response = await fetch('https://api.cobalt.tools/api/json', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ url })
-    });
+    const response = await fetch(`https://api.tikwm.com/api/?url=${encodeURIComponent(url)}`);
     const data = await response.json();
-    if (data.url) {
-      res.json({ success: true, downloadUrl: data.url, title: 'Video Stream Ready' });
+    
+    if (data.data && data.data.play) {
+      res.json({ success: true, downloadUrl: data.data.play });
     } else {
-      res.json({ success: false, error: 'Video Link မထုတ်ယူနိုင်ပါ' });
+      res.json({ success: false, error: 'Video extraction failed' });
     }
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Music API
+// 5. MUSIC PLAYER ENGINE (With Folder & Delete API)
 app.post('/api/music/upload', upload.single('audio'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No File' });
+  if (!req.file) return res.status(400).json({ error: 'No File Uploaded' });
   const uploader = req.session.user || 'Guest';
+  const folder = req.body.folder || 'General';
   const fileUrl = `/uploads/${req.file.filename}`;
-  await supabase.from('music').insert([{ title: req.file.originalname, file_url: fileUrl, uploader }]);
+  
+  await supabase.from('music').insert([{ title: req.file.originalname, file_url: fileUrl, uploader, folder }]);
   res.json({ success: true });
 });
 
@@ -127,12 +131,17 @@ app.get('/api/music/list', async (req, res) => {
   res.json(data || []);
 });
 
-// Realtime Chat Engine
+app.delete('/api/music/delete/:id', async (req, res) => {
+  const { id } = req.params;
+  await supabase.from('music').delete().eq('id', id);
+  res.json({ success: true });
+});
+
+// 6. REALTIME CHAT ENGINE (Socket.io)
 io.on('connection', (socket) => {
   socket.on('join_room', (room) => socket.join(room));
   socket.on('send_message', (data) => io.to(data.room).emit('receive_message', data));
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  
+server.listen(PORT, () => console.log(`Flâsh Pro Server running on Port ${PORT}`));
