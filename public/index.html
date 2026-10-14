@@ -1,151 +1,121 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="my">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#7c4dff">
   <title>Flâsh Pro</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+  <div class="floating-shapes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 
-  <!-- Cartoon Style Custom Popup Modal -->
-  <div id="cartoon-modal" class="modal-overlay" style="display: none;">
+  <div id="cartoon-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="display:none">
     <div class="modal-card">
       <div id="modal-icon" class="modal-avatar">🚀</div>
-      <h3 id="modal-title">Flâsh Pro</h3>
-      <p id="modal-msg">Processing...</p>
-      
-      <!-- Progress Bar Container -->
-      <div id="progress-container" style="display: none; margin-top: 15px;">
-        <div class="progress-bar-bg">
-          <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
-        </div>
-        <span id="progress-text" style="font-weight: bold; color: #ff6b6b; font-size: 14px; margin-top: 5px; display: block;">0%</span>
+      <h2 id="modal-title">Flâsh Pro</h2>
+      <p id="modal-msg">Ready!</p>
+      <div id="progress-container" class="progress-container" style="display:none">
+        <div class="progress-bar-bg"><div id="progress-bar-fill" class="progress-bar-fill"></div></div>
+        <span id="progress-text">0%</span>
       </div>
-
-      <button id="modal-btn" onclick="closeModal()" style="margin-top: 15px;">OK</button>
+      <button class="btn-primary modal-ok" onclick="closeModal()">OK, got it!</button>
     </div>
   </div>
 
-  <!-- Auth Screen -->
-  <div id="auth-container">
-    <div class="auth-card">
-      <img src="logo.png" alt="Flâsh Pro Logo" class="auth-logo">
-      <h2>Flâsh Pro</h2>
-      <p>အကောင့်ဝင်ပါ သို့မဟုတ် အကောင့်သစ်ဖွင့်ပါ</p>
-      <input type="text" id="auth-user" placeholder="Username">
-      <input type="password" id="auth-pass" placeholder="Password">
-      <button class="btn-primary" onclick="login()">⚡ Login</button>
-      <button class="btn-secondary" onclick="register()">✨ Register</button>
-    </div>
-  </div>
+  <main id="auth-container">
+    <section class="auth-card cartoon-card">
+      <div class="mascot-badge">⚡</div>
+      <img src="logo.png" alt="Flâsh Pro logo" class="auth-logo">
+      <p class="eyebrow">HELLO, FRIEND!</p>
+      <h1>Flâsh Pro</h1>
+      <p class="auth-copy">အကောင့်ဝင်ပါ သို့မဟုတ် အသစ်ဖွင့်ပါ</p>
+      <label class="sr-only" for="auth-user">Username</label>
+      <input type="text" id="auth-user" placeholder="Username" autocomplete="username" maxlength="24">
+      <label class="sr-only" for="auth-pass">Password</label>
+      <input type="password" id="auth-pass" placeholder="Password (အနည်းဆုံး ၈ လုံး)" autocomplete="current-password" maxlength="128">
+      <button class="btn-primary" onclick="login()"><i class="fa-solid fa-bolt"></i> Login</button>
+      <button class="btn-secondary" onclick="register()"><i class="fa-solid fa-wand-magic-sparkles"></i> Create account</button>
+      <p class="tiny-note">Your AI keys stay private to your account.</p>
+    </section>
+  </main>
 
-  <!-- App Main Screen -->
-  <div id="app-container" style="display: none;">
-    <aside class="sidebar">
-      <!-- Flâsh Pro Logo -->
-      <div class="brand-logo-container">
-        <img src="logo.png" alt="Logo" class="brand-logo">
-      </div>
+  <div id="app-container" style="display:none">
+    <aside class="sidebar cartoon-card" aria-label="Main navigation">
+      <a class="brand-logo-container" href="#" aria-label="Flâsh Pro home" onclick="switchTab('ai-chat'); return false">
+        <img src="logo.png" alt="Flâsh Pro" class="brand-logo">
+      </a>
       <nav class="nav-menu">
-        <button class="nav-btn active" onclick="switchTab('ai-chat', this)"><i class="fa-solid fa-robot"></i></button>
-        <button class="nav-btn" onclick="switchTab('friends-chat', this)"><i class="fa-solid fa-comments"></i></button>
-        <button class="nav-btn" onclick="switchTab('group-chat', this)"><i class="fa-solid fa-users"></i></button>
-        <button class="nav-btn" onclick="switchTab('downloader', this)"><i class="fa-solid fa-circle-down"></i></button>
-        <button class="nav-btn" onclick="switchTab('music', this)"><i class="fa-solid fa-music"></i></button>
-        <button class="nav-btn" onclick="switchTab('settings', this)"><i class="fa-solid fa-gear"></i></button>
+        <button class="nav-btn active" title="AI Chat" aria-label="AI Chat" onclick="switchTab('ai-chat', this)"><i class="fa-solid fa-robot"></i><span>AI</span></button>
+        <button class="nav-btn" title="Search Friends" aria-label="Search Friends" onclick="switchTab('friends-search', this)"><i class="fa-solid fa-user-plus"></i><span>Search</span></button>
+        <button class="nav-btn" title="Private Chats" aria-label="Private Chats" onclick="switchTab('private-inbox', this)"><i class="fa-solid fa-comments"></i><span>Private</span></button>
+        <button class="nav-btn" title="Group Chat" aria-label="Group Chat" onclick="switchTab('group-chat', this)"><i class="fa-solid fa-users"></i><span>Group</span></button>
+        <button class="nav-btn" title="Video Downloader" aria-label="Video Downloader" onclick="switchTab('downloader', this)"><i class="fa-solid fa-circle-down"></i><span>Video</span></button>
+        <button class="nav-btn" title="Music Library" aria-label="Music Library" onclick="switchTab('music', this)"><i class="fa-solid fa-music"></i><span>Music</span></button>
+        <button class="nav-btn" title="Settings" aria-label="Settings" onclick="switchTab('settings', this)"><i class="fa-solid fa-gear"></i><span>Setup</span></button>
       </nav>
+      <div class="sidebar-footer">✦</div>
     </aside>
 
     <main class="main-content">
-      <!-- AI Chat -->
       <section id="ai-chat" class="tab-pane active">
-        <div class="header-bar">
-          <h2>🤖 AI Chat</h2>
-          <select id="ai-provider" class="select-sm">
-            <option value="gemini">Gemini AI</option>
-            <option value="groq">Groq (Llama-3)</option>
-          </select>
-        </div>
-        <div id="ai-logs" class="chat-area"></div>
-        <div class="chat-input-bar">
-          <input type="text" id="ai-prompt" placeholder="AI ကို မေးပါ...">
-          <button onclick="sendAiPrompt()"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
+        <header class="header-bar"><div><p class="eyebrow">YOUR CREATIVE SIDEKICK</p><h2>🤖 AI Chat</h2></div>
+          <select id="ai-provider" class="select-sm" aria-label="AI provider"><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="deepseek">DeepSeek</option><option value="openai">ChatGPT · OpenAI</option><option value="xai">Grok · xAI</option><option value="manus">Manus Agent</option></select>
+        </header>
+        <div id="ai-logs" class="chat-area"><div class="welcome-card"><span class="welcome-mascot">🧠</span><h3>Ask away!</h3><p>သင့်ကိုယ်ပိုင် API key နဲ့ AI ကို မေးမြန်းနိုင်ပါတယ်။</p></div></div>
+        <div class="chat-input-bar"><input type="text" id="ai-prompt" placeholder="AI ကို မေးပါ..." maxlength="6000" autocomplete="off"><button aria-label="Send AI message" onclick="sendAiPrompt()"><i class="fa-solid fa-paper-plane"></i></button></div>
       </section>
 
-      <!-- Private Chat Friends List -->
-      <section id="friends-chat" class="tab-pane">
-        <div class="header-bar">
-          <h2>💬 မိတ်ဆွေများ</h2>
-        </div>
-        <div style="padding: 10px; background: #fff;">
-          <input type="text" id="search-friend" placeholder="🔍 Search Friend by Username..." onkeyup="filterUsers()" style="width:100%; padding:10px; border:2px solid #e0e1dd; border-radius:12px;">
-        </div>
+      <section id="friends-search" class="tab-pane">
+        <header class="header-bar"><div><p class="eyebrow">MEET YOUR PEOPLE</p><h2>🔎 Search Friends</h2></div></header>
+        <div class="section-intro">Username နဲ့ရှာပြီး စကားစတင်ပြောပါ။</div>
+        <div class="search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="search-friend" placeholder="Username ရိုက်ထည့်ပါ..." oninput="filterUsers()" autocomplete="off"></div>
         <div id="friends-list" class="list-container"></div>
       </section>
 
-      <!-- Private Chat Window -->
+      <section id="private-inbox" class="tab-pane">
+        <header class="header-bar"><div><p class="eyebrow">JUST BETWEEN YOU</p><h2>💬 Private Chats</h2></div><button class="btn-secondary compact" onclick="switchTab('friends-search')"><i class="fa-solid fa-user-plus"></i> Find friends</button></header>
+        <div id="private-conversations" class="list-container"></div>
+      </section>
+
       <section id="private-chat-win" class="tab-pane">
-        <div class="header-bar">
-          <button onclick="switchTab('friends-chat')" class="back-btn"><i class="fa-solid fa-arrow-left"></i></button>
-          <h2 id="target-username">Chat</h2>
-        </div>
+        <header class="header-bar"><button class="back-btn" onclick="switchTab('private-inbox')" aria-label="Back to private chats"><i class="fa-solid fa-arrow-left"></i></button><div class="chat-title"><p class="eyebrow">PRIVATE CONVERSATION</p><h2 id="target-username">Chat</h2></div><span class="online-dot" title="Live chat"></span></header>
         <div id="private-logs" class="chat-area"></div>
-        <div class="chat-input-bar">
-          <input type="text" id="private-msg" placeholder="စာရိုက်ပါ...">
-          <button onclick="sendPrivateMsg()"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
+        <div class="chat-input-bar"><input type="text" id="private-msg" placeholder="စာရိုက်ပါ..." maxlength="2000" autocomplete="off"><button aria-label="Send private message" onclick="sendPrivateMsg()"><i class="fa-solid fa-paper-plane"></i></button></div>
       </section>
 
-      <!-- Group Chat -->
       <section id="group-chat" class="tab-pane">
-        <div class="header-bar">
-          <h2>👨‍👩‍👧‍👦 Group Chat</h2>
-        </div>
-        <div id="group-logs" class="chat-area"></div>
-        <div class="chat-input-bar">
-          <input type="text" id="group-msg" placeholder="Group သို့ စာပို့ရန်...">
-          <button onclick="sendGroupMsg()"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
+        <header class="header-bar"><div><p class="eyebrow">SAY HI TO EVERYONE</p><h2>👨‍👩‍👧‍👦 Group Chat</h2></div><span class="live-pill"><i></i> LIVE</span></header>
+        <div id="group-logs" class="chat-area"><div class="welcome-card"><span class="welcome-mascot">🎈</span><h3>Group hangout</h3><p>ဒီမှာ အားလုံးနဲ့ စကားပြောနိုင်ပါတယ်။</p></div></div>
+        <div class="chat-input-bar"><input type="text" id="group-msg" placeholder="Group ထဲ စာရေးပါ..." maxlength="2000" autocomplete="off"><button aria-label="Send group message" onclick="sendGroupMsg()"><i class="fa-solid fa-paper-plane"></i></button></div>
       </section>
 
-      <!-- Video Downloader -->
       <section id="downloader" class="tab-pane">
-        <div class="header-bar"><h2>🎬 Video Downloader</h2></div>
-        <div class="padded-box">
-          <input type="text" id="dl-url" placeholder="TikTok / YouTube Video Link ထည့်ပါ...">
-          <button class="btn-primary" onclick="downloadVideo()">📥 Video Link ယူရန်</button>
-          <div id="dl-result" class="result-box" style="margin-top:15px;"></div>
-        </div>
+        <header class="header-bar"><div><p class="eyebrow">SAVE A CLIP FOR LATER</p><h2>🎬 Video Downloader</h2></div></header>
+        <div class="feature-page"><div class="feature-card cartoon-card"><div class="feature-illustration">📹<span>✨</span></div><h3>Drop a video link</h3><p>YouTube နဲ့ TikTok link တွေကို ခွင့်ပြုထားတဲ့ downloader instance မှတစ်ဆင့် ရယူပါ။</p><label class="sr-only" for="dl-url">Video URL</label><input type="url" id="dl-url" placeholder="https://youtu.be/..." autocomplete="url"><button class="btn-primary" onclick="downloadVideo()"><i class="fa-solid fa-download"></i> Get download links</button><div id="dl-result" class="result-box" aria-live="polite"></div></div></div>
       </section>
 
-      <!-- Music Player & Upload -->
       <section id="music" class="tab-pane">
-        <div class="header-bar"><h2>🎵 Music Library</h2></div>
-        <div class="padded-box">
-          <input type="text" id="folder-name" placeholder="Folder အမည် (ဥပမာ- Pop Songs)">
-          <input type="file" id="music-file" accept="audio/*">
-          <button class="btn-primary" onclick="uploadMusic()">☁️ Upload Song</button>
-          <div id="music-list" class="list-container" style="margin-top:15px;"></div>
-        </div>
+        <header class="header-bar"><div><p class="eyebrow">YOUR LITTLE JUKEBOX</p><h2>🎵 Music Library</h2></div></header>
+        <div class="feature-page music-page"><div class="upload-card cartoon-card"><div class="feature-illustration music-note">🎶</div><h3>Add your soundtrack</h3><p>MP3, WAV, OGG, M4A, AAC, FLAC သို့မဟုတ် WebM · 25 MB အထိ</p><label class="sr-only" for="folder-name">Folder name</label><input type="text" id="folder-name" placeholder="Folder အမည် · General" maxlength="60"><label class="file-picker"><i class="fa-solid fa-cloud-arrow-up"></i><span>Choose audio file</span><input type="file" id="music-file" accept="audio/*"></label><div id="selected-file" class="selected-file">No file chosen</div><button class="btn-primary" onclick="uploadMusic()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload song</button></div><div id="music-list" class="music-library list-container"></div></div>
       </section>
 
-      <!-- Settings -->
       <section id="settings" class="tab-pane">
-        <div class="header-bar"><h2>⚙️ Settings</h2></div>
-        <div class="padded-box">
-          <input type="text" id="gemini-key" placeholder="Gemini API Key">
-          <input type="text" id="groq-key" placeholder="Groq API Key">
-          <button class="btn-primary" onclick="saveSettings()">💾 Save Keys</button>\n          <button class="btn-secondary" onclick="logout()">🚪 Logout</button>
-        </div>
+        <header class="header-bar"><div><p class="eyebrow">MAKE IT YOURS</p><h2>⚙️ Settings</h2></div></header>
+        <div class="feature-page"><div class="settings-card cartoon-card"><div class="settings-mascot">🔐</div><h3>Your own AI keys</h3><p>AI provider တစ်ခုစီအတွက် သင့်ကိုယ်ပိုင် API key ကို ထည့်ပါ။ Key များကို သင့် account အတွက် သီးသန့်သိမ်းပြီး မျက်နှာပြင်မှာ ပြန်မပြပါ။ OpenAI API key က ChatGPT subscription login နဲ့ သီးခြားဖြစ်ပါတယ်။ Manus ရွေးချယ်မှုက ပုံမှန် model API မဟုတ်ဘဲ သင့်အကောင့်မှာ private agent task တစ်ခု ဖန်တီးအသုံးပြုပါတယ်။</p>
+          <label for="gemini-key">Google Gemini API key <span id="gemini-key-status" class="key-status">Not saved</span></label><input type="password" id="gemini-key" placeholder="Gemini API key" autocomplete="new-password"><div class="setting-actions"><button class="btn-primary" onclick="saveSettings('gemini')">Save Gemini key</button><button class="btn-ghost" onclick="clearApiKey('gemini')">Remove</button></div>
+          <label for="groq-key">Groq API key <span id="groq-key-status" class="key-status">Not saved</span></label><input type="password" id="groq-key" placeholder="Groq API key" autocomplete="new-password"><div class="setting-actions"><button class="btn-primary" onclick="saveSettings('groq')">Save Groq key</button><button class="btn-ghost" onclick="clearApiKey('groq')">Remove</button></div>
+          <label for="deepseek-key">DeepSeek API key <span id="deepseek-key-status" class="key-status">Not saved</span></label><input type="password" id="deepseek-key" placeholder="DeepSeek API key" autocomplete="new-password"><div class="setting-actions"><button class="btn-primary" onclick="saveSettings('deepseek')">Save DeepSeek key</button><button class="btn-ghost" onclick="clearApiKey('deepseek')">Remove</button></div>
+          <label for="openai-key">OpenAI / ChatGPT API key <span id="openai-key-status" class="key-status">Not saved</span></label><input type="password" id="openai-key" placeholder="OpenAI API key" autocomplete="new-password"><div class="setting-actions"><button class="btn-primary" onclick="saveSettings('openai')">Save OpenAI key</button><button class="btn-ghost" onclick="clearApiKey('openai')">Remove</button></div>
+          <label for="xai-key">xAI / Grok API key <span id="xai-key-status" class="key-status">Not saved</span></label><input type="password" id="xai-key" placeholder="xAI API key" autocomplete="new-password"><div class="setting-actions"><button class="btn-primary" onclick="saveSettings('xai')">Save Grok key</button><button class="btn-ghost" onclick="clearApiKey('xai')">Remove</button></div>
+          <label for="manus-key">Manus API key <span id="manus-key-status" class="key-status">Not saved</span></label><input type="password" id="manus-key" placeholder="Manus API key" autocomplete="new-password"><div class="setting-actions"><button class="btn-primary" onclick="saveSettings('manus')">Save Manus key</button><button class="btn-ghost" onclick="clearApiKey('manus')">Remove</button></div>
+          <div class="settings-divider"></div><button class="btn-secondary logout-button" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>
+        </div></div>
       </section>
-
     </main>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
