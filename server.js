@@ -95,11 +95,26 @@ app.post('/api/register', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 12);
     const { error } = await supabase.from('users').insert([{ username, password: hashedPassword }]);
-    if (error) return res.status(409).json({ success: false, message: 'Username ရှိပြီးသားဖြစ်နေပါသည် သို့မဟုတ် database သို့ ချိတ်ဆက်မရပါ။' });
+    if (error) {
+      console.error('Registration database insert failed:', {
+        code: error.code, message: error.message
+      });
+      if (error.code === '23505') {
+        return res.status(409).json({ success: false, message: 'ဤ username ကို အသုံးပြုထားပြီးပါပြီ။ အခြား username သုံးပါ။' });
+      }
+      if (error.code === '42501') {
+        return res.status(503).json({ success: false, message: 'Database က account ဖန်တီးခွင့်မပြုပါ (RLS/permission)။ Server-only Supabase key နှင့် database policies ကို စစ်ဆေးပါ။' });
+      }
+      if (['42P01', 'PGRST204', 'PGRST205', '42703', '23502'].includes(error.code)) {
+        return res.status(503).json({ success: false, message: 'Database users table သို့မဟုတ် လိုအပ်သော columns မကိုက်ညီပါ။ README ထဲက schema ကို စစ်ဆေးပါ။' });
+      }
+      const dbCode = error.code ? ` (code: ${error.code})` : '';
+      return res.status(503).json({ success: false, message: `Database ထဲသို့ account သိမ်းမရပါ${dbCode}။ Server logs နှင့် Supabase configuration ကို စစ်ဆေးပါ။` });
+    }
     res.json({ success: true, message: 'အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။' });
   } catch (err) {
-    console.error('Registration failed:', err.message);
-    res.status(500).json({ success: false, message: 'အကောင့်ဖွင့်၍ မရပါ။ နောက်မှ ထပ်ကြိုးစားပါ။' });
+    console.error('Registration failed unexpectedly:', err.message);
+    res.status(503).json({ success: false, message: 'Database ကို ယခုဆက်သွယ်မရပါ။ Server logs နှင့် Supabase URL/key ကို စစ်ဆေးပါ။' });
   }
 });
 
