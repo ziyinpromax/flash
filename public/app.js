@@ -3,7 +3,6 @@ let currentUser = '';
 let targetUser = '';
 let allUsers = [];
 
-// Custom Cartoon Popup Modal Logic
 function showModal(icon, title, msg, showProgress = false) {
   document.getElementById('modal-icon').innerText = icon;
   document.getElementById('modal-title').innerText = title;
@@ -157,14 +156,14 @@ async function sendAiPrompt() {
   logs.innerHTML += `<div class="chat-bubble other"><b>AI:</b> ${data.text || data.error}</div>`;
 }
 
-// Video Downloader Engine with Progress
+// Video Downloader Fix
 async function downloadVideo() {
   const url = document.getElementById('dl-url').value.trim();
   const resultDiv = document.getElementById('dl-result');
   if (!url) return showModal('⚠️', 'Attention', 'Video Link ထည့်ပါ');
 
   showModal('⏳', 'Extracting Video', 'ဗီဒီယို လင့်ခ် ထုတ်ယူနေပါသည်...', true);
-  updateProgress(40);
+  updateProgress(50);
 
   const res = await fetch('/api/download', {
     method: 'POST',
@@ -179,12 +178,12 @@ async function downloadVideo() {
     if (data.success) {
       resultDiv.innerHTML = `<a href="${data.downloadUrl}" target="_blank"><button class="btn-primary">📥 Click to Download Video</button></a>`;
     } else {
-      showModal('❌', 'Error', 'Video extraction failed!');
+      showModal('❌', 'Error', data.error || 'Video extraction failed!');
     }
-  }, 400);
+  }, 300);
 }
 
-// Music Upload with Exact % Progress Tracking
+// Music Upload & List Refresh Fix
 function uploadMusic() {
   const fileInput = document.getElementById('music-file');
   const folderName = document.getElementById('folder-name').value.trim() || 'General';
@@ -207,15 +206,12 @@ function uploadMusic() {
   };
 
   xhr.onload = function () {
+    closeModal();
     if (xhr.status === 200) {
-      setTimeout(() => {
-        closeModal();
-        showModal('🎉', 'Success', 'သီချင်း တင်ခြင်း အောင်မြင်ပါသည်!');
-        document.getElementById('music-file').value = '';
-        loadMusic();
-      }, 300);
+      showModal('🎉', 'Success', 'သီချင်း တင်ခြင်း အောင်မြင်ပါသည်!');
+      document.getElementById('music-file').value = '';
+      loadMusic();
     } else {
-      closeModal();
       showModal('❌', 'Failed', 'Upload တင်၍ မရပါ!');
     }
   };
