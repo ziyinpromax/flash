@@ -1,37 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  font-family: 'Fredoka', cursive, sans-serif;
+  transition: all 0.3s ease;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #121212;
-  color: #fff;
   margin: 0;
   padding: 20px;
+  background: linear-gradient(-45deg, #ff9a9e, #fecfef, #a1c4fd, #c2e9fb);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  min-height: 100vh;
 }
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Card Styling */
 .card {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  background: #1e1e1e;
-  border-radius: 8px;
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+  border: 4px solid #fff;
+  text-align: center;
+  animation: bounceIn 0.8s ease;
 }
-input, select, button {
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.avatar-icon {
+  font-size: 60px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+h1, h2, h3 {
+  color: #4a4e69;
+  text-shadow: 2px 2px 0px #fff;
+}
+
+/* Inputs & Buttons */
+input, select {
   width: 100%;
-  padding: 10px;
-  margin: 8px 0;
-  border-radius: 4px;
-  border: none;
+  padding: 14px 18px;
+  margin: 10px 0;
+  border-radius: 16px;
+  border: 3px solid #e0e1dd;
+  background: #f8f9fa;
+  font-size: 16px;
+  outline: none;
 }
+
+input:focus, select:focus {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 12px rgba(255,107,107,0.4);
+}
+
 button {
-  background-color: #007bff;
-  color: white;
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 16px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
+  background: linear-gradient(45deg, #ff6b6b, #feca57);
+  color: white;
+  box-shadow: 0 6px 0px #ee5253;
 }
-button:hover { background-color: #0056b3; }
-nav { display: flex; gap: 10px; margin-bottom: 20px; }
-nav button { flex: 1; }
+
+button:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0px #ee5253;
+}
+
+button:hover {
+  filter: brightness(1.1);
+}
+
+/* Navigation Tabs */
+nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+nav button {
+  flex: 1;
+  white-space: nowrap;
+  background: linear-gradient(45deg, #48dbfb, #1dd1a1);
+  box-shadow: 0 5px 0px #10ac84;
+}
+
+/* App Main Container */
+#app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 25px;
+  border-radius: 28px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  border: 5px solid #fff;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Chat Box */
 .chat-box {
-  height: 250px;
-  border: 1px solid #333;
+  height: 300px;
+  border: 3px solid #c8d6e5;
+  border-radius: 20px;
   overflow-y: auto;
-  padding: 10px;
-  background: #181818;
-  margin-bottom: 10px;
+  padding: 15px;
+  background: #f1f2f6;
+  margin-bottom: 12px;
+}
+
+.chat-box p {
+  background: #fff;
+  padding: 10px 15px;
+  border-radius: 15px;
+  margin: 8px 0;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
