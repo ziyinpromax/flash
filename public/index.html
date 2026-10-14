@@ -8,31 +8,36 @@
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+
+  <!-- Auth Container -->
   <div id="auth-container" class="card">
-    <h2>Flâsh Pro - Auth</h2>
-    <input type="text" id="auth-user" placeholder="Username">
-    <input type="password" id="auth-pass" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <button onclick="register()">Register</button>
+    <div class="avatar-icon">🚀🤖</div>
+    <h2>Flâsh Pro</h2>
+    <p style="color: #6c757d;">Welcome! Please login to continue.</p>
+    <input type="text" id="auth-user" placeholder="👤 Username">
+    <input type="password" id="auth-pass" placeholder="🔑 Password">
+    <button onclick="login()">⚡ Login</button>
+    <button onclick="register()" style="background: linear-gradient(45deg, #48dbfb, #1dd1a1); box-shadow: 0 6px 0px #10ac84;">✨ Register</button>
   </div>
 
+  <!-- App Main Container -->
   <div id="app-container" style="display: none;">
     <header>
-      <h1>Flâsh Pro</h1>
-      <span id="user-display"></span>
+      <h1>⚡ Flâsh Pro 🎨</h1>
+      <span id="user-display" style="font-weight: bold; background: #ffeaa7; padding: 8px 15px; border-radius: 20px; color: #d35400;"></span>
     </header>
 
     <nav>
-      <button onclick="showSection('ai-chat')">AI Chat</button>
-      <button onclick="showSection('downloader')">Downloader</button>
-      <button onclick="showSection('realtime-chat')">Chat / Group</button>
-      <button onclick="showSection('music')">Music Player</button>
-      <button onclick="showSection('settings')">Settings</button>
+      <button onclick="showSection('ai-chat')">🤖 AI Chat</button>
+      <button onclick="showSection('downloader')">🎬 Downloader</button>
+      <button onclick="showSection('realtime-chat')">💬 Group Chat</button>
+      <button onclick="showSection('music')">🎵 Music</button>
+      <button onclick="showSection('settings')">⚙️ Settings</button>
     </nav>
 
     <!-- AI Chat Section -->
     <section id="ai-chat" class="tab-content">
-      <h3>AI Chat Engine</h3>
+      <h3>🤖 AI Smart Assistant</h3>
       <select id="ai-provider">
         <option value="gemini">Gemini AI</option>
         <option value="groq">Groq AI (Llama)</option>
@@ -40,41 +45,41 @@
       <input type="text" id="ai-model" placeholder="Model (Default: gemini-2.5-flash / llama-3.3-70b-versatile)">
       <div id="ai-logs" class="chat-box"></div>
       <input type="text" id="ai-prompt" placeholder="Ask AI anything...">
-      <button onclick="sendAiPrompt()">Send</button>
+      <button onclick="sendAiPrompt()">🚀 Send to AI</button>
     </section>
 
     <!-- Video Downloader -->
     <section id="downloader" class="tab-content" style="display:none;">
-      <h3>YouTube / TikTok / FB Downloader</h3>
-      <input type="text" id="dl-url" placeholder="Paste video URL...">
-      <button onclick="downloadVideo()">Download Link Fetch</button>
-      <div id="dl-result"></div>
+      <h3>🎬 Video Downloader (YouTube / TikTok / FB)</h3>
+      <input type="text" id="dl-url" placeholder="Paste Video URL here...">
+      <button onclick="downloadVideo()">📥 Extract Video</button>
+      <div id="dl-result" style="margin-top: 15px;"></div>
     </section>
 
     <!-- Realtime Chat -->
     <section id="realtime-chat" class="tab-content" style="display:none;">
-      <h3>Group Chat</h3>
+      <h3>💬 Fun Group Chat</h3>
       <input type="text" id="chat-room" value="Global" placeholder="Room Name">
-      <button onclick="joinRoom()">Join Room</button>
+      <button onclick="joinRoom()" style="background: linear-gradient(45deg, #ff9ff3, #feca57); box-shadow: 0 6px 0px #ff6b6b;">🚪 Join Room</button>
       <div id="chat-logs" class="chat-box"></div>
-      <input type="text" id="chat-msg" placeholder="Type message...">
-      <button onclick="sendChatMessage()">Send</button>
+      <input type="text" id="chat-msg" placeholder="Type a message...">
+      <button onclick="sendChatMessage()">📩 Send</button>
     </section>
 
     <!-- Music Player -->
     <section id="music" class="tab-content" style="display:none;">
-      <h3>Music Player & Upload</h3>
+      <h3>🎵 Music Player & Upload</h3>
       <input type="file" id="music-file" accept="audio/*">
-      <button onclick="uploadMusic()">Upload Song</button>
-      <div id="music-list"></div>
+      <button onclick="uploadMusic()" style="background: linear-gradient(45deg, #ff6b6b, #ff9ff3); box-shadow: 0 6px 0px #ee5253;">☁️ Upload MP3</button>
+      <div id="music-list" style="margin-top: 15px;"></div>
     </section>
 
     <!-- Settings API Keys -->
     <section id="settings" class="tab-content" style="display:none;">
-      <h3>API Settings</h3>
+      <h3>⚙️ API Settings</h3>
       <input type="text" id="gemini-key" placeholder="Gemini API Key">
       <input type="text" id="groq-key" placeholder="Groq API Key">
-      <button onclick="saveSettings()">Save API Keys</button>
+      <button onclick="saveSettings()">💾 Save API Keys</button>
     </section>
   </div>
 
