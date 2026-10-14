@@ -1039,10 +1039,4 @@ app.use((error, _req, res, _next) => {
   if (!res.headersSent) jsonError(res, 500, 'Server အမှားတစ်ခု ဖြစ်ပွားခဲ့ပါသည်။');
 });
 
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, ticket] of recoveryTickets) if (ticket.expiresAt <= now) recoveryTickets.delete(key);
-  for (const [key, ticket] of downloadTickets) if (ticket.expiresAt <= now) downloadTickets.delete(key);
-}, 60_000).unref();
-
 server.listen(PORT, () => console.log(`Flâsh Pro running on port ${PORT}`));
