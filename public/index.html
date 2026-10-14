@@ -22,9 +22,8 @@
     </div>
   </div>
 
-  <!-- App Main Screen (Full Screen Layout with Sidebar) -->
+  <!-- App Main Screen -->
   <div id="app-container" style="display: none;">
-    <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="user-avatar" id="sidebar-user-avatar">U</div>
       <nav class="nav-menu">
@@ -37,7 +36,6 @@
       </nav>
     </aside>
 
-    <!-- Main Content Panel -->
     <main class="main-content">
       <!-- AI Chat -->
       <section id="ai-chat" class="tab-pane active">
@@ -55,7 +53,7 @@
         </div>
       </section>
 
-      <!-- Private Chat -->
+      <!-- Private Friends Chat -->
       <section id="friends-chat" class="tab-pane">
         <div class="header-bar">
           <h2>မိတ်ဆွေများ</h2>
@@ -88,23 +86,24 @@
         </div>
       </section>
 
-      <!-- Downloader -->
+      <!-- Video Downloader -->
       <section id="downloader" class="tab-pane">
         <div class="header-bar"><h2>Video Downloader</h2></div>
         <div class="padded-box">
-          <input type="text" id="dl-url" placeholder="YouTube, TikTok, FB Video Link ထည့်ပါ...">
+          <input type="text" id="dl-url" placeholder="TikTok / YouTube Video Link ထည့်ပါ...">
           <button class="btn-primary" onclick="downloadVideo()">Video Link ယူရန်</button>
-          <div id="dl-result" class="result-box"></div>
+          <div id="dl-result" class="result-box" style="margin-top:15px;"></div>
         </div>
       </section>
 
-      <!-- Music Player -->
+      <!-- Music Player & Folder System -->
       <section id="music" class="tab-pane">
-        <div class="header-bar"><h2>Music Player</h2></div>
+        <div class="header-bar"><h2>Music Library</h2></div>
         <div class="padded-box">
+          <input type="text" id="folder-name" placeholder="Folder / Playlist အမည် (ဥပမာ- Pop Songs)">
           <input type="file" id="music-file" accept="audio/*">
           <button class="btn-primary" onclick="uploadMusic()">Upload Song</button>
-          <div id="music-list" class="list-container"></div>
+          <div id="music-list" class="list-container" style="margin-top:15px;"></div>
         </div>
       </section>
 
