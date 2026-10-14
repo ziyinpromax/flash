@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flâsh Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="auth-container" class="card">
+    <h2>Flâsh Pro - Auth</h2>
+    <input type="text" id="auth-user" placeholder="Username">
+    <input type="password" id="auth-pass" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <button onclick="register()">Register</button>
+  </div>
+
+  <div id="app-container" style="display: none;">
+    <header>
+      <h1>Flâsh Pro</h1>
+      <span id="user-display"></span>
+    </header>
+
+    <nav>
+      <button onclick="showSection('ai-chat')">AI Chat</button>
+      <button onclick="showSection('downloader')">Downloader</button>
+      <button onclick="showSection('realtime-chat')">Chat / Group</button>
+      <button onclick="showSection('music')">Music Player</button>
+      <button onclick="showSection('settings')">Settings</button>
+    </nav>
+
+    <!-- AI Chat Section -->
+    <section id="ai-chat" class="tab-content">
+      <h3>AI Chat Engine</h3>
+      <select id="ai-provider">
+        <option value="gemini">Gemini AI</option>
+        <option value="groq">Groq AI (Llama)</option>
+      </select>
+      <input type="text" id="ai-model" placeholder="Model (Default: gemini-2.5-flash / llama-3.3-70b-versatile)">
+      <div id="ai-logs" class="chat-box"></div>
+      <input type="text" id="ai-prompt" placeholder="Ask AI anything...">
+      <button onclick="sendAiPrompt()">Send</button>
+    </section>
+
+    <!-- Video Downloader -->
+    <section id="downloader" class="tab-content" style="display:none;">
+      <h3>YouTube / TikTok / FB Downloader</h3>
+      <input type="text" id="dl-url" placeholder="Paste video URL...">
+      <button onclick="downloadVideo()">Download Link Fetch</button>
+      <div id="dl-result"></div>
+    </section>
+
+    <!-- Realtime Chat -->
+    <section id="realtime-chat" class="tab-content" style="display:none;">
+      <h3>Group Chat</h3>
+      <input type="text" id="chat-room" value="Global" placeholder="Room Name">
+      <button onclick="joinRoom()">Join Room</button>
+      <div id="chat-logs" class="chat-box"></div>
+      <input type="text" id="chat-msg" placeholder="Type message...">
+      <button onclick="sendChatMessage()">Send</button>
+    </section>
+
+    <!-- Music Player -->
+    <section id="music" class="tab-content" style="display:none;">
+      <h3>Music Player & Upload</h3>
+      <input type="file" id="music-file" accept="audio/*">
+      <button onclick="uploadMusic()">Upload Song</button>
+      <div id="music-list"></div>
+    </section>
+
+    <!-- Settings API Keys -->
+    <section id="settings" class="tab-content" style="display:none;">
+      <h3>API Settings</h3>
+      <input type="text" id="gemini-key" placeholder="Gemini API Key">
+      <input type="text" id="groq-key" placeholder="Groq API Key">
+      <button onclick="saveSettings()">Save API Keys</button>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
