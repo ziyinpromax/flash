@@ -35,8 +35,7 @@ alter table public.users
   add column if not exists id uuid default gen_random_uuid(),
   add column if not exists display_name text not null default '',
   add column if not exists avatar_url text,
-  add column if not exists last_seen_at timestamptz,
-  add column if not exists recovery_secret_hash text;
+  add column if not exists last_seen_at timestamptz;
 update public.users set id = gen_random_uuid() where id is null;
 update public.users set display_name = username where display_name = '';
 alter table public.users alter column id set default gen_random_uuid();
@@ -57,32 +56,6 @@ create table if not exists public.app_sessions (
 alter table public.app_sessions add column if not exists user_id uuid references public.users(id) on delete cascade;
 create index if not exists app_sessions_user_idx on public.app_sessions(user_id);
 create index if not exists app_sessions_expire_idx on public.app_sessions(expire);
-
-create table if not exists public.password_recovery_tickets (
-  token_hash text primary key,
-  user_id uuid not null references public.users(id) on delete cascade,
-  expires_at timestamptz not null,
-  created_at timestamptz not null default now()
-);
-create index if not exists password_recovery_tickets_expire_idx on public.password_recovery_tickets(expires_at);
-
-create or replace function public.flash_reset_password(p_token_hash text, p_password_hash text)
-returns table(user_id uuid)
-language plpgsql security definer set search_path = public, pg_temp
-as $$
-declare recovered_user_id uuid;
-begin
-  delete from public.password_recovery_tickets t
-   where t.token_hash = p_token_hash and t.expires_at > now()
-   returning t.user_id into recovered_user_id;
-  if recovered_user_id is null then return; end if;
-  update public.users u set password = p_password_hash where u.id = recovered_user_id;
-  if not found then return; end if;
-  delete from public.app_sessions s where s.user_id = recovered_user_id;
-  return query select recovered_user_id;
-end $$;
-revoke all on function public.flash_reset_password(text, text) from public, anon, authenticated;
-grant execute on function public.flash_reset_password(text, text) to service_role;
 
 create table if not exists public.chat_conversations (
   id text primary key,
@@ -214,7 +187,6 @@ select 'group:global', id from public.users on conflict (conversation_id, user_i
 
 alter table public.app_sessions enable row level security;
 alter table public.download_tickets enable row level security;
-alter table public.password_recovery_tickets enable row level security;
 alter table public.chat_conversations enable row level security;
 alter table public.chat_conversation_members enable row level security;
 alter table public.chat_messages enable row level security;

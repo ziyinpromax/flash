@@ -15,7 +15,6 @@ let pendingGroupReply = null;
 let groupConversationPinned = false;
 let groupConversationNickname = '';
 let groupHiddenForMe = false;
-let recoveringResetToken = '';
 
 function showModal(icon, title, message, showProgress = false) {
   document.getElementById('modal-icon').textContent = icon;
@@ -115,32 +114,15 @@ function goBack() {
 }
 function toggleSidebar() { document.getElementById('app-container').classList.toggle('sidebar-open'); }
 function closeSidebar() { document.getElementById('app-container').classList.remove('sidebar-open'); }
-function showForgotPassword() {
-  document.getElementById('auth-form').hidden = true;
-  document.getElementById('forgot-panel').hidden = false;
-  document.getElementById('verify-recovery-button').hidden = false;
-  document.getElementById('reset-password-fields').hidden = true;
-  ['recover-username', 'recover-secret', 'reset-new-password', 'reset-confirm-password'].forEach(id => { document.getElementById(id).value = ''; });
-  recoveringResetToken = '';
-}
-function hideForgotPassword() {
-  document.getElementById('forgot-panel').hidden = true;
-  document.getElementById('auth-form').hidden = false;
-  document.getElementById('verify-recovery-button').hidden = false;
-  document.getElementById('reset-password-fields').hidden = true;
-  recoveringResetToken = '';
-}
-
 async function register() {
   const username = document.getElementById('auth-user').value.trim().toLowerCase();
   const display = document.getElementById('register-name').value.trim();
   const password = document.getElementById('auth-pass').value;
-  const recoverySecret = document.getElementById('recovery-secret').value.trim();
   showModal('⚡', 'Creating account', 'Account information ကို ပို့နေပါသည်…', true);
   try {
     const data = await xhrJsonRequest('/api/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, displayName: display, password, recoverySecret })
+      body: JSON.stringify({ username, displayName: display, password })
     }, (percent, phase) => {
       if (percent === null) { document.getElementById('modal-msg').textContent = phase || 'Waiting for server'; updateProgress(100); }
       else updateProgress(percent);
@@ -170,33 +152,6 @@ async function login() {
     enterApp(data.username, data.userId);
   } catch (error) { showModal('🙈', 'Login failed', error.message); }
 }
-async function verifyRecovery() {
-  const username = document.getElementById('recover-username').value.trim().toLowerCase();
-  const recoverySecret = document.getElementById('recover-secret').value.trim();
-  try {
-    const data = await jsonRequest('/api/password/recovery/verify', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, recoverySecret })
-    });
-    recoveringResetToken = data.resetToken;
-    document.getElementById('verify-recovery-button').hidden = true;
-    document.getElementById('reset-password-fields').hidden = false;
-    showModal('🔐', 'Verified', 'Recovery code/name မှန်ပါသည်။ Password အသစ်သတ်မှတ်ပါ။');
-  } catch (error) { showModal('⚠️', 'Could not verify', error.message); }
-}
-async function finishPasswordReset() {
-  const newPassword = document.getElementById('reset-new-password').value;
-  const confirmPassword = document.getElementById('reset-confirm-password').value;
-  if (newPassword !== confirmPassword) return showModal('⚠️', 'Password မတူပါ', 'Password အသစ်နှစ်ခုကို တူညီအောင်ထည့်ပါ။');
-  try {
-    const data = await jsonRequest('/api/password/recovery/reset', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resetToken: recoveringResetToken, newPassword })
-    });
-    hideForgotPassword();
-    document.getElementById('auth-pass').value = '';
-    showModal('✅', 'Password updated', data.message);
-  } catch (error) { showModal('⚠️', 'Could not reset password', error.message); }
-}
-
 function conversationStorageKey() { return `flash.private.${currentUserId || currentUser}`; }
 function getConversations() {
   try { return JSON.parse(localStorage.getItem(conversationStorageKey()) || '[]'); }
@@ -774,15 +729,6 @@ async function changePassword() {
     showModal('✅', 'Password changed', data.message);
   } catch (error) { showModal('⚠️', 'Could not change password', error.message); }
 }
-async function saveRecoverySecret() {
-  const currentPassword = document.getElementById('recovery-current-password').value;
-  const recoverySecret = document.getElementById('profile-recovery-secret').value.trim();
-  try {
-    const data = await jsonRequest('/api/profile/recovery-secret', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword, recoverySecret }) });
-    document.getElementById('recovery-current-password').value = ''; document.getElementById('profile-recovery-secret').value = '';
-    showModal('🔐', 'Recovery detail saved', data.message);
-  } catch (error) { showModal('⚠️', 'Could not save recovery detail', error.message); }
-}
 async function refreshKeyStatus() {
   const providers = ['gemini', 'groq', 'deepseek', 'openai', 'xai', 'manus'];
   try {
@@ -835,7 +781,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('music-file').addEventListener('change', selectedMusicFile);
   document.getElementById('profile-photo-file').addEventListener('change', uploadProfilePhoto);
   document.getElementById('auth-user').addEventListener('input', event => { event.target.value = event.target.value.toLowerCase(); });
-  document.getElementById('recover-username').addEventListener('input', event => { event.target.value = event.target.value.toLowerCase(); });
   document.getElementById('profile-username').addEventListener('input', event => { event.target.value = event.target.value.toLowerCase(); });
   document.getElementById('auth-pass').addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
   restoreSession();
