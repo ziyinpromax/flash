@@ -5,14 +5,13 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-body, html {
-  width: 100%;
-  height: 100%;
+html, body {
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
   background-color: #f4f6f8;
 }
 
-/* Auth Page */
 #auth-container {
   width: 100%;
   height: 100%;
@@ -29,7 +28,6 @@ body, html {
   padding: 30px;
   border-radius: 16px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
 .auth-card input {
@@ -48,7 +46,6 @@ body, html {
   border: none;
   border-radius: 8px;
   font-weight: bold;
-  margin-top: 5px;
 }
 
 .btn-secondary {
@@ -62,16 +59,15 @@ body, html {
   margin-top: 8px;
 }
 
-/* App Main Layout */
 #app-container {
   display: flex;
   width: 100vw;
   height: 100vh;
 }
 
-/* Sidebar Styling (Matching Image 2/3/4) */
 .sidebar {
   width: 60px;
+  height: 100vh;
   background: #0084ff;
   display: flex;
   flex-direction: column;
@@ -115,10 +111,9 @@ body, html {
   border-left: 4px solid #fff;
 }
 
-/* Main Content Area */
 .main-content {
   flex: 1;
-  height: 100%;
+  height: 100vh;
   position: relative;
   background: #fff;
 }
@@ -126,7 +121,7 @@ body, html {
 .tab-pane {
   display: none;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   flex-direction: column;
 }
 
@@ -140,20 +135,22 @@ body, html {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: #fff;
+  height: 60px;
 }
 
 .chat-area {
   flex: 1;
   padding: 15px;
   overflow-y: auto;
-  background: #f9fa3b1a;
+  background: #f9f9f9;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 .chat-bubble {
-  max-width: 75%;
+  max-width: 80%;
   padding: 10px 14px;
   border-radius: 16px;
   font-size: 15px;
@@ -178,6 +175,7 @@ body, html {
   gap: 10px;
   border-top: 1px solid #eee;
   background: #fff;
+  height: 65px;
 }
 
 .chat-input-bar input {
@@ -200,22 +198,19 @@ body, html {
 .list-container {
   flex: 1;
   overflow-y: auto;
+  padding: 10px;
 }
 
 .user-item {
   display: flex;
   align-items: center;
-  padding: 15px;
+  padding: 12px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
 }
 
-.user-item:hover {
-  background: #f9f9f9;
-}
-
 .padded-box {
-  padding: 20px;
+  padding: 15px;
 }
 
 .padded-box input {
@@ -226,14 +221,29 @@ body, html {
   border-radius: 8px;
 }
 
-.select-sm {
-  padding: 6px;
-  border-radius: 6px;
+.music-card {
+  background: #f8f9fa;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
 }
 
-.back-btn {
-  border: none;
-  background: none;
-  font-size: 18px;
-  margin-right: 10px;
+.music-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
+
+.delete-btn {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.select-sm { padding: 6px; border-radius: 6px; }
+.back-btn { border: none; background: none; font-size: 18px; margin-right: 10px; }
