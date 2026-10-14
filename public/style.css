@@ -5,7 +5,6 @@
   margin: 0;
   padding: 0;
   font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  transition: all 0.2s ease;
 }
 
 html, body {
@@ -23,7 +22,6 @@ html, body {
   100% { background-position: 0% 50%; }
 }
 
-/* Modal Popup Cartoon Styling */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
@@ -38,12 +36,6 @@ html, body {
   border-radius: 24px; text-align: center;
   border: 4px solid #fff;
   box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes popIn {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
 }
 
 .modal-avatar { font-size: 50px; margin-bottom: 10px; }
@@ -61,7 +53,6 @@ html, body {
   transition: width 0.2s ease;
 }
 
-/* Auth Card Layout */
 #auth-container {
   width: 100vw; height: 100vh;
   display: flex; justify-content: center; align-items: center;
@@ -95,18 +86,17 @@ html, body {
   box-shadow: 0 4px 0px #10ac84;
 }
 
-/* App Main Screen */
-#app-container { display: flex; width: 100vw; height: 100vh; }
+#app-container { display: flex; width: 100vw; height: 100vh; overflow: hidden; }
 
 .sidebar {
-  width: 65px; height: 100vh;
+  width: 65px; height: 100%;
   background: linear-gradient(180deg, #0084ff, #00d2ff);
   display: flex; flex-direction: column; align-items: center;
   padding-top: 12px; flex-shrink: 0; box-shadow: 4px 0 15px rgba(0,0,0,0.1);
 }
 
 .brand-logo-container { margin-bottom: 20px; }
-.brand-logo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+.brand-logo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
 
 .nav-menu { display: flex; flex-direction: column; gap: 15px; width: 100%; }
 
@@ -117,12 +107,12 @@ html, body {
 
 .nav-btn.active {
   color: #fff; background: rgba(255, 255, 255, 0.25);
-  border-left: 4px solid #fff; transform: scale(1.1);
+  border-left: 4px solid #fff;
 }
 
 .main-content {
-  flex: 1; height: 100vh; display: flex; flex-direction: column;
-  background: rgba(255, 255, 255, 0.95); overflow: hidden;
+  flex: 1; height: 100%; display: flex; flex-direction: column;
+  background: rgba(255, 255, 255, 0.95); overflow: hidden; position: relative;
 }
 
 .tab-pane { display: none; width: 100%; height: 100%; flex-direction: column; }
@@ -134,9 +124,10 @@ html, body {
   background: #fff; flex-shrink: 0;
 }
 
+/* Chat Layout Fix - Inputs Always Visible */
 .chat-area {
   flex: 1; padding: 15px; overflow-y: auto; background: #f8f9fa;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 10px; margin-bottom: 0;
 }
 
 .chat-bubble {
@@ -149,7 +140,7 @@ html, body {
 
 .chat-input-bar {
   padding: 10px; display: flex; gap: 10px; border-top: 1px solid #eee;
-  background: #fff; height: 60px; flex-shrink: 0;
+  background: #fff; height: 60px; flex-shrink: 0; align-items: center;
 }
 
 .chat-input-bar input {
