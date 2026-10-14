@@ -59,13 +59,7 @@ async function login() {
   });
   const data = await res.json();
   if (data.success) {
-    currentUser = data.username;
-    document.getElementById('auth-container').style.display = 'none';
-    document.getElementById('app-container').style.display = 'flex';
-    
-    socket.emit('join_room', 'GlobalGroup');
-    loadUsers();
-    loadMusic();
+    enterApp(data.username);
   } else {
     showModal('❌', 'Login Failed', data.message);
   }
@@ -259,3 +253,44 @@ async function saveSettings() {
   });
   showModal('💾', 'Saved', 'API Keys သိမ်းဆည်းပြီးပါပြီ!');
 }
+
+
+// Restore login after refreshing the page.
+function enterApp(username) {
+  currentUser = username;
+  document.getElementById('auth-container').style.display = 'none';
+  document.getElementById('app-container').style.display = 'flex';
+  socket.emit('join_room', 'GlobalGroup');
+  loadUsers();
+  loadMusic();
+}
+
+async function restoreSession() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'same-origin' });
+    const data = await res.json();
+    if (data.loggedIn && data.username) enterApp(data.username);
+  } catch (err) {
+    console.error('Session restore failed:', err);
+  }
+}
+
+async function logout() {
+  try {
+    const res = await fetch('/api/logout', {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    if (!res.ok) throw new Error('Logout failed');
+    currentUser = '';
+    targetUser = '';
+    document.getElementById('app-container').style.display = 'none';
+    document.getElementById('auth-container').style.display = 'flex';
+    document.getElementById('auth-pass').value = '';
+    showModal('👋', 'Logged out', 'အကောင့်မှ ထွက်ပြီးပါပြီ။');
+  } catch (err) {
+    showModal('❌', 'Error', 'Logout မအောင်မြင်ပါ။ ထပ်ကြိုးစားပါ။');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', restoreSession);

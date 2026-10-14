@@ -20,7 +20,25 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-app.use(session({ secret: 'flashpro_secret_key', resave: false, saveUninitialized: true }));
+app.use(session({
+  name: 'flashpro.sid',
+  secret: process.env.SESSION_SECRET || 'flashpro_secret_key_change_this_before_production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000
+  }
+}));
+
+function requireAuth(req, res, next) {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ success: false, error: 'Login ပြန်ဝင်ပါ။' });
+  }
+  next();
+}
 
 const storage = multer.diskStorage({
   destination: './public/uploads/',
@@ -29,6 +47,21 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Auth
+app.get('/api/me', (req, res) => {
+  if (req.session && req.session.user) {
+    return res.json({ loggedIn: true, username: req.session.user });
+  }
+  res.json({ loggedIn: false });
+});
+
+app.post('/api/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) return res.status(500).json({ success: false });
+    res.clearCookie('flashpro.sid');
+    res.json({ success: true });
+  });
+});
+
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.json({ success: false, message: 'Username နှင့် Password ဖြည့်ပါ။' });
@@ -93,8 +126,16 @@ app.post('/api/ai/chat', async (req, res) => {
 app.post('/api/download', async (req, res) => {
   const { url } = req.body;
   try {
-    const fetch = (await import('node-fetch')).default;
-    const response = await fetch('https://api.cobalt.tools/api/json', {
+    if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+      return res.status(400).json({ success: false, error: 'မှန်ကန်သော Video URL ထည့်ပါ။' });
+    }
+    const parsedUrl = new URL(url);
+    if (!['youtube.com', 'www.youtube.com', 'm.youtube.com',
+          'youtu.be', 'tiktok.com', 'www.tiktok.com',
+          'vm.tiktok.com', 'vt.tiktok.com'].includes(parsedUrl.hostname)) {
+      return res.status(400).json({ success: false, error: 'YouTube သို့မဟုတ် TikTok link ကိုသာ ထည့်ပါ။' });
+    }
+    const response = await fetch('https://api.cobalt.tools/', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -103,7 +144,7 @@ app.post('/api/download', async (req, res) => {
       body: JSON.stringify({ url })
     });
     const data = await response.json();
-    if (data.url) {
+    if (response.ok && data.url) {
       res.json({ success: true, downloadUrl: data.url });
     } else {
       res.json({ success: false, error: 'Video Link မထုတ်ယူနိုင်ပါ' });
@@ -114,7 +155,7 @@ app.post('/api/download', async (req, res) => {
 });
 
 // Music Upload & List Fix
-app.post('/api/music/upload', upload.single('audio'), async (req, res) => {
+app.post('/api/music/upload', requireAuth, upload.single('audio'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No File' });
   const uploader = req.session.user || 'Guest';
   const folder = req.body.folder || 'General';
@@ -133,9 +174,20 @@ app.get('/api/music/list', async (req, res) => {
   res.json(data || []);
 });
 
-app.delete('/api/music/delete/:id', async (req, res) => {
+app.delete('/api/music/delete/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  await supabase.from('music').delete().eq('id', id);
+  const { data: song, error: findError } = await supabase
+    .from('music').select('id,uploader').eq('id', id).maybeSingle();
+
+  if (findError || !song) {
+    return res.status(404).json({ success: false, error: 'သီချင်း မတွေ့ပါ။' });
+  }
+  if (song.uploader !== req.session.user) {
+    return res.status(403).json({ success: false, error: 'ကိုယ်ပိုင်သီချင်းကိုသာ ဖျက်နိုင်ပါသည်။' });
+  }
+
+  const { error } = await supabase.from('music').delete().eq('id', id);
+  if (error) return res.status(500).json({ success: false, error: 'ဖျက်၍မရပါ။' });
   res.json({ success: true });
 });
 
