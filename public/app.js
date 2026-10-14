@@ -1,6 +1,7 @@
 const socket = io();
 let currentUser = '';
 let targetUser = '';
+let allUsers = [];
 
 function switchTab(paneId, btn) {
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
@@ -52,13 +53,20 @@ async function login() {
 
 async function loadUsers() {
   const res = await fetch('/api/users');
-  const users = await res.json();
+  allUsers = await res.json();
+  renderUsers(allUsers);
+}
+
+function renderUsers(users) {
   const container = document.getElementById('friends-list');
-  if (!users || users.length <= 1) {
+  const filtered = users.filter(u => u.username !== currentUser);
+
+  if (!filtered || filtered.length === 0) {
     container.innerHTML = '<p style="padding:15px;color:#888;">မိတ်ဆွေ အကောင့်မရှိသေးပါ</p>';
     return;
   }
-  container.innerHTML = users.filter(u => u.username !== currentUser).map(u => `
+
+  container.innerHTML = filtered.map(u => `
     <div class="user-item" onclick="openPrivateChat('${u.username}')">
       <div style="width:40px;height:40px;border-radius:50%;background:#0084ff;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:12px;">
         ${u.username.charAt(0).toUpperCase()}
@@ -69,6 +77,12 @@ async function loadUsers() {
       </div>
     </div>
   `).join('');
+}
+
+function filterUsers() {
+  const query = document.getElementById('search-friend').value.toLowerCase();
+  const filtered = allUsers.filter(u => u.username.toLowerCase().includes(query));
+  renderUsers(filtered);
 }
 
 function openPrivateChat(user) {
@@ -122,21 +136,29 @@ async function sendAiPrompt() {
   logs.innerHTML += `<div class="chat-bubble other"><b>AI:</b> ${data.text || data.error}</div>`;
 }
 
+// Client-side Video Extraction
 async function downloadVideo() {
-  const url = document.getElementById('dl-url').value;
+  const url = document.getElementById('dl-url').value.trim();
   const resultDiv = document.getElementById('dl-result');
-  resultDiv.innerText = 'Extracting Link...';
+  if (!url) return alert('Video Link ထည့်ပါ');
+  
+  resultDiv.innerText = 'Extracting link...';
 
-  const res = await fetch('/api/download', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url })
-  });
-  const data = await res.json();
-  if (data.success) {
-    resultDiv.innerHTML = `<a href="${data.downloadUrl}" target="_blank"><button class="btn-primary">Download Video</button></a>`;
-  } else {
-    resultDiv.innerText = 'Download မရပါ: ' + (data.error || '');
+  try {
+    const response = await fetch('https://api.cobalt.tools/api/json', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    });
+    const data = await response.json();
+
+    if (data.url) {
+      resultDiv.innerHTML = `<a href="${data.url}" target="_blank"><button class="btn-primary">Click to Download Video</button></a>`;
+    } else {
+      resultDiv.innerText = 'Video extraction failed. Please check the URL.';
+    }
+  } catch (err) {
+    resultDiv.innerText = 'Download error: ' + err.message;
   }
 }
 
@@ -182,4 +204,15 @@ async function deleteMusic(id) {
   if (!confirm('ဒီသီချင်းကို ဖျက်မှာ သေချာပါသလား?')) return;
   await fetch(`/api/music/delete/${id}`, { method: 'DELETE' });
   loadMusic();
+}
+
+async function saveSettings() {
+  const geminiKey = document.getElementById('gemini-key').value;
+  const groqKey = document.getElementById('groq-key').value;
+  await fetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ geminiKey, groqKey })
+  });
+  alert('API Keys Saved!');
 }
