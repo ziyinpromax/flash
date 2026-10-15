@@ -7,7 +7,6 @@ Flâsh Pro သည် animated cartoon UI ပါသော chat/web app ဖြစ�
 - AI chat — provider တစ်ခုစီအတွက် ကိုယ်ပိုင် key၊ Enter ဖြင့်ပို့ခြင်း
 - Search Friends — Private Chats inbox မှ သီးခြားစာမျက်နှာ
 - Private chat နှင့် Group chat — Socket.IO real-time messaging
-- Video downloader — server ပေါ်က yt-dlp ကို အသုံးပြုပြီး YouTube, TikTok နှင့် Facebook public video များကို ဒေါင်းလုဒ်လုပ်ခြင်း
 - Music library — audio upload, playback, delete; Supabase Storage ကို ရွေးချယ်အသုံးပြုနိုင်ခြင်း
 - Cartoon animation — nav, cards, buttons, message bubbles, modals နှင့် forms တစ်လျှောက် motion; reduced-motion preference ကို လေးစားသည်
 
@@ -72,10 +71,6 @@ Provider အလိုက် default model များကို environment vari
 - Manus: `Manus Agent` ရွေးချယ်မှုသည် plain model inference မဟုတ်ပါ။ အသုံးပြုသူ၏ Manus API key ဖြင့် private task conversation တစ်ခုဖန်တီးပြီး ဆက်လက်အသုံးပြုသည်။
 
 ChatGPT account subscription နဲ့ OpenAI API access/key သည် သီးခြားဖြစ်နိုင်သည်။ Provider တစ်ခုစီတွင် သက်ဆိုင်ရာ API access ရှိသော key ကို ထည့်ပါ။
-
-## Video downloader
-
-Downloader သည် YouTube, TikTok နှင့် Facebook public video link များကို server ပေါ်က `yt-dlp` ဖြင့် စစ်ဆေးပြီး download လုပ်ပေးသည်။ Railway deployment အတွက် root `Dockerfile` က Python, `yt-dlp[default]` နှင့် FFmpeg ကို install လုပ်ပေးသည်။ `COBALT_API_URL` သို့မဟုတ် သီးခြား downloader API key မလိုပါ။ Download ဖိုင်တစ်ခုလျှင် 500 MB အထိသာဖြစ်ပြီး၊ platform အလိုက် bot detection သို့မဟုတ် access restriction ရှိလျှင် public link တချို့ မရနိုင်ပါ။
 
 ## အရေးကြီးသည့် runtime မှတ်ချက်များ
 

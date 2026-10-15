@@ -57,7 +57,6 @@
         <button class="nav-btn" title="Search Friends" aria-label="Search Friends" onclick="switchTab('friends-search', this)"><i class="fa-solid fa-user-plus"></i><span>Search</span></button>
         <button class="nav-btn" title="Private Chats" aria-label="Private Chats" onclick="switchTab('private-inbox', this)"><i class="fa-solid fa-comments"></i><span>Private</span></button>
         <button class="nav-btn" title="Group Chat" aria-label="Group Chat" onclick="switchTab('group-chat', this)"><i class="fa-solid fa-users"></i><span>Group</span></button>
-        <button class="nav-btn" title="Video Downloader" aria-label="Video Downloader" onclick="switchTab('downloader', this)"><i class="fa-solid fa-circle-down"></i><span>Video</span></button>
         <button class="nav-btn" title="Music Library" aria-label="Music Library" onclick="switchTab('music', this)"><i class="fa-solid fa-music"></i><span>Music</span></button>
         <button class="nav-btn" title="Settings" aria-label="Settings" onclick="switchTab('settings', this)"><i class="fa-solid fa-gear"></i><span>Setup</span></button>
       </nav>
@@ -95,11 +94,6 @@
         <header class="header-bar"><div><p class="eyebrow">SAY HI TO EVERYONE</p><h2>👨‍👩‍👧‍👦 Group Chat</h2></div><span class="live-pill"><i></i> LIVE</span></header>
         <div id="group-logs" class="chat-area"><div class="welcome-card"><span class="welcome-mascot">🎈</span><h3>Group hangout</h3><p>ဒီမှာ အားလုံးနဲ့ စကားပြောနိုင်ပါတယ်။</p></div></div>
         <div class="chat-input-bar"><input type="text" id="group-msg" placeholder="Group ထဲ စာရေးပါ..." maxlength="2000" autocomplete="off"><button aria-label="Send group message" onclick="sendGroupMsg()"><i class="fa-solid fa-paper-plane"></i></button></div>
-      </section>
-
-      <section id="downloader" class="tab-pane">
-        <header class="header-bar"><div><p class="eyebrow">SAVE A CLIP FOR LATER</p><h2>🎬 Video Downloader</h2></div></header>
-        <div class="feature-page"><div class="feature-card cartoon-card"><div class="feature-illustration">📹<span>✨</span></div><h3>Drop a video link</h3><p>YouTube, TikTok နဲ့ Facebook public video link တွေကို server ပေါ်က yt-dlp နဲ့ download လုပ်နိုင်ပါတယ်။ 500 MB အထိသာဖြစ်ပြီး platform ကန့်သတ်ချက်ကြောင့် link အချို့ မရနိုင်ပါ။</p><label class="sr-only" for="dl-url">Video URL</label><input type="url" id="dl-url" placeholder="YouTube / TikTok / Facebook URL" autocomplete="url"><button class="btn-primary" onclick="downloadVideo()"><i class="fa-solid fa-download"></i> Download video</button><div id="dl-result" class="result-box" aria-live="polite"></div></div></div>
       </section>
 
       <section id="music" class="tab-pane">

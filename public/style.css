@@ -145,9 +145,6 @@ input:focus { border-color: #a998ff; box-shadow: 0 0 0 4px rgba(117,87,255,.1); 
 .feature-card p, .upload-card p, .settings-card > p { margin-bottom: 16px; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .feature-card .btn-primary, .upload-card .btn-primary { margin-top: 9px; }
 .result-box { display: flex; flex-direction: column; gap: 9px; margin-top: 15px; text-align: left; }
-.download-link { display: block; padding: 13px 15px; color: #5741c3; text-decoration: none; background: #f4f0ff; border: 2px solid #e6ddff; border-radius: 15px; transition: transform .2s, background .2s; }
-.download-link:hover { transform: translateX(4px); background: #ebe4ff; }
-.filename-label { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .file-picker { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 53px; margin: 9px 0 5px; color: #7158dd; background: #f5f1ff; border: 2px dashed #c8bcff; border-radius: 16px; font-weight: 600; cursor: pointer; transition: background .2s, transform .2s; }
 .file-picker:hover { transform: translateY(-2px); background: #eee8ff; }
 .file-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
