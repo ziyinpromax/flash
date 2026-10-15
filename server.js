@@ -209,6 +209,43 @@ async function callOpenAICompatible({ endpoint, key, model, prompt }) {
   return data.choices?.[0]?.message?.content || '';
 }
 
+function getAiErrorMessage(provider, err) {
+  const message = String(err?.message || '').toLowerCase();
+  const code = String(err?.code || '').toLowerCase();
+  const status = Number(err?.status || err?.statusCode || err?.response?.status || 0)
+    || Number(message.match(/(?:http|status(?: code)?)[^0-9]{0,8}(\d{3})/i)?.[1] || 0);
+
+  if (/unable to authenticate data|authentication tag|bad decrypt/.test(message)) {
+    return 'API key ကို ယခင်က encrypt လုပ်ထားတဲ့ server secret ပြောင်းသွားတာကြောင့် ဖတ်မရပါ။ Settings ထဲက အဲဒီ provider ရဲ့ key ကို ဖျက်ပြီး အသစ်ပြန်ထည့်ပါ။';
+  }
+  if (/insufficient_quota|quota|billing|credit balance|payment required/.test(message) || status === 402) {
+    return 'API account ရဲ့ credit/quota မလုံလောက်ပါ သို့မဟုတ် billing မဖွင့်ထားပါ။ Provider account ရဲ့ usage နှင့် billing ကို စစ်ဆေးပါ။';
+  }
+  if (/invalid api key|api key not valid|incorrect api key|invalid_api_key|unauthorized/.test(message) || status === 401) {
+    return 'ဒီ provider က API key ကို လက်မခံပါ။ Key ကို မှန်ကန်တဲ့ provider အတွက် ထုတ်ထားကြောင်း၊ key အပြည့်အစုံ ထည့်ထားကြောင်း စစ်ဆေးပါ။';
+  }
+  if (/model.*(not found|does not exist|unavailable)|unknown model|model_not_found/.test(message) || status === 404) {
+    return 'သတ်မှတ်ထားတဲ့ AI model ကို ဒီ account မှာ မရနိုင်ပါ။ Railway Variables ထဲက provider model setting ကို စစ်ဆေးရန်လိုနိုင်ပါတယ်။';
+  }
+  if (/rate.?limit|too many requests/.test(message) || status === 429) {
+    return 'Provider ရဲ့ request limit ကို ခဏတာကျော်သွားပါတယ်။ ခဏစောင့်ပြီး ထပ်စမ်းပါ၊ မကြာခဏဖြစ်ရင် provider usage limit ကို စစ်ဆေးပါ။';
+  }
+  if (/timeout|timed out|aborted/.test(message) || ['etimedout', 'und_err_connect_timeout'].includes(code)) {
+    return 'AI provider ဆီက အချိန်မီတုံ့ပြန်ချက်မရပါ။ ခဏနောက်မှ ပြန်စမ်းပါ။';
+  }
+  if (/fetch failed|enotfound|econnreset|eai_again/.test(message) || ['enotfound', 'econnreset', 'eai_again'].includes(code)) {
+    return 'Server က AI provider ကို မချိတ်ဆက်နိုင်ပါ။ Server internet သို့မဟုတ် provider service အခြေအနေကို စစ်ဆေးပါ။';
+  }
+  if (/permission|forbidden|not enabled|access denied/.test(message) || status === 403) {
+    return 'API key ကို လက်ခံပေမယ့် ဒီ model/API ကို အသုံးပြုခွင့်မရှိပါ။ Provider account ရဲ့ permission နှင့် API access ကို စစ်ဆေးပါ။';
+  }
+  if (status === 400 || /invalid_argument|bad request/.test(message)) {
+    return 'Provider က ဒီ model သို့မဟုတ် request ကို လက်မခံပါ။ Model ID နှင့် provider setting ကို စစ်ဆေးပါ။';
+  }
+  if (provider === 'manus' && err?.message?.startsWith('Manus')) return err.message;
+  return `AI service က တောင်းဆိုချက်ကို လက်မခံပါ${status ? ` (HTTP ${status})` : ''}။ API key၊ model သို့မဟုတ် provider account ကို စစ်ဆေးပါ။`;
+}
+
 async function callManus({ apiKey, username, prompt }) {
   const base = 'https://api.manus.ai/v2';
   const headers = { 'Content-Type': 'application/json', 'x-manus-api-key': apiKey };
@@ -304,8 +341,8 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
     }
     res.json({ text });
   } catch (err) {
-    console.error(`${provider} AI request failed:`, err.message);
-    res.status(502).json({ error: err.message?.startsWith('Manus') ? err.message : 'AI service ကို ခေါ်ယူ၍မရပါ။ API key၊ model နှင့် provider ကို စစ်ဆေးပါ။' });
+    console.error(`${provider} AI request failed:`, { status: err?.status || err?.statusCode || null, code: err?.code || null, message: err.message });
+    res.status(502).json({ error: getAiErrorMessage(provider, err) });
   }
 });
 
