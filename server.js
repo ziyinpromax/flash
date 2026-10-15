@@ -8,6 +8,8 @@ const session = require('express-session');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs/promises');
+const os = require('os');
+const { spawn } = require('child_process');
 const crypto = require('crypto');
 const { GoogleGenAI } = require('@google/genai');
 const Groq = require('groq-sdk');
@@ -313,9 +315,7 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
   }
 });
 
-// Cobalt API: configure an instance you own or are explicitly allowed to use.
-const COBALT_API_URL = process.env.COBALT_API_URL;
-const COBALT_API_KEY = process.env.COBALT_API_KEY;
+// Run yt-dlp locally so the downloader needs no separately hosted API.
 function isAllowedVideoUrl(rawUrl) {
   try {
     const parsed = new URL(rawUrl);
@@ -329,45 +329,105 @@ function isAllowedVideoUrl(rawUrl) {
   }
 }
 
+function runYtDlp(args, timeoutMs = 60000) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const finish = (error, result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      error ? reject(error) : resolve(result);
+    };
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      const error = new Error('yt-dlp timed out');
+      error.code = 'ETIMEDOUT';
+      finish(error);
+    }, timeoutMs);
+    child.stdout.on('data', chunk => {
+      if (stdout.length < 1024 * 1024) stdout += chunk.toString();
+    });
+    child.stderr.on('data', chunk => {
+      if (stderr.length < 12000) stderr += chunk.toString();
+    });
+    child.once('error', error => finish(error));
+    child.once('close', code => {
+      if (code === 0) return finish(null, { stdout: stdout.trim(), stderr });
+      finish(new Error(stderr.trim().slice(-1500) || `yt-dlp exited with code ${code}`));
+    });
+  });
+}
+
 app.post('/api/download', requireAuth, async (req, res) => {
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
-  if (!isAllowedVideoUrl(url)) {
+  if (!isAllowedVideoUrl(url) || url.length > 2048) {
     return res.status(400).json({ success: false, error: 'မှန်ကန်သော YouTube, TikTok သို့မဟုတ် Facebook video link ထည့်ပါ။' });
   }
-  if (!COBALT_API_URL) {
-    return res.status(503).json({ success: false, error: 'Downloader API မသတ်မှတ်ရသေးပါ။ Server admin က ခွင့်ပြုထားသော Cobalt instance ကို COBALT_API_URL ဖြင့် သတ်မှတ်ရပါမည်။' });
+  try {
+    const { stdout } = await runYtDlp([
+      '--ignore-config', '--no-playlist', '--no-warnings', '--quiet',
+      '--js-runtimes', 'node', '--simulate', '--format', 'bestvideo*+bestaudio/best', '--print', 'title', '--', url
+    ], 60000);
+    const filename = stdout.replace(/\s+/g, ' ').slice(0, 180);
+    if (!filename) return res.status(422).json({ success: false, error: 'ဒီ link မှာ download လုပ်နိုင်တဲ့ video မတွေ့ပါ။' });
+    const downloadUrl = `/api/download/file?url=${encodeURIComponent(url)}`;
+    res.json({ success: true, downloads: [downloadUrl], filename });
+  } catch (err) {
+    console.error('yt-dlp video lookup failed:', err.message.slice(0, 1000));
+    if (err.code === 'ENOENT') return res.status(503).json({ success: false, error: 'Server မှာ yt-dlp မတပ်ဆင်ရသေးပါ။ Railway ကို Dockerfile အသစ်နဲ့ redeploy လုပ်ပါ။' });
+    const timedOut = err.code === 'ETIMEDOUT';
+    const botBlocked = /sign in to confirm|not a bot/i.test(err.message);
+    const error = timedOut ? 'ဒီ video link ကို စစ်ဆေးဖို့ အချိန်ကျော်သွားပါသည်။' : botBlocked ? 'YouTube က server ကို bot စစ်ဆေးမှုနဲ့ ပိတ်ထားတာကြောင့် ဒီ link ကို ယခုမရယူနိုင်ပါ။' : 'ဒီ video ကို ယခုရယူမရပါ။ Public video link ဖြစ်ကြောင်း စစ်ဆေးပါ။';
+    res.status(timedOut ? 504 : 422).json({ success: false, error });
+  }
+});
+
+app.get('/api/download/file', requireAuth, async (req, res) => {
+  const url = typeof req.query?.url === 'string' ? req.query.url.trim() : '';
+  if (!isAllowedVideoUrl(url) || url.length > 2048) {
+    return res.status(400).json({ success: false, error: 'မှန်ကန်သော YouTube, TikTok သို့မဟုတ် Facebook video link ထည့်ပါ။' });
   }
 
+  let tempDir = '';
   try {
-    const headers = { Accept: 'application/json', 'Content-Type': 'application/json' };
-    if (COBALT_API_KEY) headers.Authorization = `Api-Key ${COBALT_API_KEY}`;
-    const response = await fetch(COBALT_API_URL, {
-      method: 'POST', headers, body: JSON.stringify({ url, localProcessing: 'disabled' }), signal: AbortSignal.timeout(30000)
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'flash-ytdlp-'));
+    const outputTemplate = path.join(tempDir, 'video.%(ext)s');
+    await runYtDlp([
+      '--ignore-config', '--no-playlist', '--no-warnings', '--quiet', '--no-progress',
+      '--js-runtimes', 'node', '--max-filesize', '500M', '--format', 'bestvideo*+bestaudio/best',
+      '--output', outputTemplate, '--', url
+    ], 10 * 60 * 1000);
+
+    const fileName = (await fs.readdir(tempDir)).find(name => name.startsWith('video.'));
+    if (!fileName) throw new Error('yt-dlp produced no output file');
+    const filePath = path.join(tempDir, fileName);
+    const stat = await fs.stat(filePath);
+    if (!stat.isFile() || stat.size > 500 * 1024 * 1024) {
+      await fs.rm(tempDir, { recursive: true, force: true });
+      return res.status(413).json({ success: false, error: 'Video ဖိုင်အရွယ်အစား 500 MB ထက်ကျော်နေပါသည်။' });
+    }
+
+    const extension = path.extname(fileName).toLowerCase();
+    const safeExtension = /^\.[a-z0-9]{1,8}$/.test(extension) ? extension : '.mp4';
+    res.download(filePath, `flash-video${safeExtension}`, error => {
+      fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      if (error) {
+        console.error('Downloaded video response failed:', error.message);
+        if (!res.headersSent) res.status(500).json({ success: false, error: 'Video ဖိုင်ကို ပို့မရပါ။' });
+        else if (!res.destroyed) res.destroy(error);
+      }
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const apiError = data?.error?.code;
-      return res.status(502).json({ success: false, error: apiError ? `Downloader API error: ${apiError}` : `Downloader API က HTTP ${response.status} ပြန်ပေးသည်။` });
-    }
-    if (data.status === 'error') {
-      return res.status(422).json({ success: false, error: data.error?.code || 'ဤ video ကို မရယူနိုင်ပါ။' });
-    }
-    if (data.status === 'local-processing') {
-      return res.status(422).json({ success: false, error: 'ဤ instance က server-side processing မပေးနိုင်ပါ။ Cobalt instance configuration ကို စစ်ဆေးပါ။' });
-    }
-    const links = [];
-    if (['tunnel', 'redirect'].includes(data.status) && typeof data.url === 'string') links.push(data.url);
-    if (data.status === 'picker' && Array.isArray(data.picker)) {
-      for (const item of data.picker) if (typeof item.url === 'string') links.push(item.url);
-    }
-    const validLinks = links.filter(link => {
-      try { return new URL(link).protocol === 'https:'; } catch { return false; }
-    });
-    if (!validLinks.length) return res.status(502).json({ success: false, error: 'Downloader API မှ download link ပြန်မရပါ။' });
-    res.json({ success: true, downloads: validLinks, filename: data.filename || data.output?.filename || '' });
   } catch (err) {
-    const timedOut = err.name === 'TimeoutError' || err.name === 'AbortError';
-    res.status(502).json({ success: false, error: timedOut ? 'Downloader တုံ့ပြန်မှု အချိန်ကျော်သွားပါသည်။' : 'Downloader API သို့ ချိတ်ဆက်မရပါ။' });
+    if (tempDir) await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    console.error('yt-dlp video download failed:', err.message.slice(0, 1000));
+    if (err.code === 'ENOENT') return res.status(503).json({ success: false, error: 'Server မှာ yt-dlp မတပ်ဆင်ရသေးပါ။ Railway ကို Dockerfile အသစ်နဲ့ redeploy လုပ်ပါ။' });
+    const timedOut = err.code === 'ETIMEDOUT';
+    const botBlocked = /sign in to confirm|not a bot/i.test(err.message);
+    const error = timedOut ? 'Video download အချိန်ကျော်သွားပါသည်။' : botBlocked ? 'YouTube က server ကို bot စစ်ဆေးမှုနဲ့ ပိတ်ထားတာကြောင့် ဒီ link ကို ယခုမရယူနိုင်ပါ။' : 'Video ကို ဒေါင်းလုဒ်လုပ်မရပါ။ Public link ဖြစ်ကြောင်း စစ်ဆေးပါ။';
+    res.status(timedOut ? 504 : 422).json({ success: false, error });
   }
 });
 
