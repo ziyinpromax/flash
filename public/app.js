@@ -299,42 +299,6 @@ async function sendAiPrompt() {
   }
 }
 
-function addDownloadLink(container, url, label) {
-  const link = document.createElement('a');
-  link.className = 'download-link';
-  link.href = url;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  link.textContent = `⬇ ${label}`;
-  container.append(link);
-}
-
-async function downloadVideo() {
-  const url = document.getElementById('dl-url').value.trim();
-  const result = document.getElementById('dl-result');
-  if (!url) return showModal('⚠️', 'Add a video link', 'YouTube, TikTok သို့မဟုတ် Facebook video link ထည့်ပါ။');
-  result.replaceChildren();
-  showModal('🛠️', 'Preparing your link', 'Video link ကို စစ်ဆေးနေပါသည်…');
-  try {
-    const data = await jsonRequest('/api/download', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
-    closeModal();
-    if (!data.downloads?.length) throw new Error('Download link မရပါ။');
-    if (data.filename) {
-      const filename = document.createElement('p');
-      filename.className = 'filename-label';
-      filename.textContent = data.filename;
-      result.append(filename);
-    }
-    data.downloads.forEach((link, index) => addDownloadLink(result, link, data.downloads.length > 1 ? `Download ${index + 1}` : 'Download video'));
-  } catch (error) {
-    closeModal();
-    result.append(makeNotice(error.message));
-  }
-}
-
 function selectedMusicFile() {
   const file = document.getElementById('music-file').files[0];
   document.getElementById('selected-file').textContent = file ? `${file.name} · ${(file.size / (1024 * 1024)).toFixed(1)} MB` : 'No file chosen';
