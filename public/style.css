@@ -69,7 +69,14 @@ input:focus { border-color: #a998ff; box-shadow: 0 0 0 4px rgba(117,87,255,.1); 
 .btn-ghost { padding: 10px 14px; color: #8b78cf; background: #f1edff; }
 
 #app-container { position: relative; z-index: 1; display: flex; width: 100vw; height: 100dvh; padding: 14px; gap: 12px; }
-.sidebar { display: flex; flex: 0 0 78px; flex-direction: column; align-items: center; height: 100%; padding: 12px 8px; border-radius: 25px; animation: popIn .45s ease both; }
+.sidebar { position: fixed; z-index: 12; top: 14px; bottom: 14px; left: 14px; display: flex; flex: 0 0 78px; width: 78px; height: auto; flex-direction: column; align-items: center; padding: 12px 8px; border-radius: 25px; transform: translateX(calc(-100% - 22px)); transition: transform .22s ease; }
+.sidebar.open { transform: translateX(0); }
+.sidebar-backdrop { position: fixed; z-index: 11; inset: 0; background: rgba(49,36,96,.32); border: 0; backdrop-filter: blur(2px); }
+.sidebar-backdrop[hidden] { display: none; }
+.app-navigation { position: fixed; z-index: 13; top: 22px; left: 22px; display: flex; gap: 7px; }
+.app-nav-control { display: grid; place-items: center; width: 42px; height: 42px; color: #785ef1; background: rgba(255,255,255,.97); border: 2px solid #eee9fa; border-radius: 14px; box-shadow: 0 4px 12px rgba(71,49,142,.13); }
+.app-nav-control:hover { color: white; background: #7557ff; }
+.app-nav-control[hidden] { display: none; }
 .brand-logo-container { display: block; margin: 0 0 16px; }
 .brand-logo { width: 47px; height: 47px; border: 3px solid white; border-radius: 17px; object-fit: cover; box-shadow: 0 4px 0 #e2dcff; transition: transform .3s; }
 .brand-logo-container:hover .brand-logo { transform: rotate(-8deg) scale(1.06); }
@@ -83,7 +90,7 @@ input:focus { border-color: #a998ff; box-shadow: 0 0 0 4px rgba(117,87,255,.1); 
 .main-content { position: relative; display: flex; flex: 1; min-width: 0; height: 100%; overflow: hidden; flex-direction: column; background: rgba(255,255,255,.96); border: 3px solid white; border-radius: 27px; box-shadow: var(--shadow); }
 .tab-pane { display: none; width: 100%; height: 100%; min-height: 0; flex-direction: column; animation: popIn .32s ease both; }
 .tab-pane.active { display: flex; }
-.header-bar { display: flex; flex: 0 0 76px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 22px; background: rgba(255,255,255,.92); border-bottom: 2px dashed #eeeafa; }
+.header-bar { display: flex; flex: 0 0 76px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 22px 10px 122px; background: rgba(255,255,255,.92); border-bottom: 2px dashed #eeeafa; }
 .header-bar h2 { color: var(--ink); font-size: 21px; }
 .select-sm { max-width: 190px; padding: 10px 13px; color: var(--ink); background: #f5f1ff; border: 2px solid #e5ddff; border-radius: 13px; }
 
@@ -180,14 +187,16 @@ input:focus { border-color: #a998ff; box-shadow: 0 0 0 4px rgba(117,87,255,.1); 
 
 @media (max-width: 700px) {
   #app-container { gap: 7px; padding: 7px; }
-  .sidebar { flex-basis: 59px; padding: 8px 5px; border-radius: 21px; }
+  .sidebar { top: 7px; bottom: 7px; left: 7px; flex-basis: 59px; width: 59px; padding: 8px 5px; border-radius: 21px; }
+  .app-navigation { top: 14px; left: 14px; }
+  .app-nav-control { width: 38px; height: 38px; border-radius: 12px; }
   .brand-logo { width: 41px; height: 41px; border-radius: 14px; }
   .nav-menu { gap: 5px; }
   .nav-btn { min-height: 49px; border-radius: 14px; }
   .nav-btn i { font-size: 16px; }
   .nav-btn span { font-size: 8px; }
   .main-content { border-radius: 22px; }
-  .header-bar { flex-basis: 68px; padding: 9px 13px; }
+  .header-bar { flex-basis: 68px; padding: 9px 13px 9px 106px; }
   .header-bar h2 { font-size: 17px; }
   .eyebrow { font-size: 8px; }
   .chat-area { padding: 15px 12px; }

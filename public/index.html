@@ -43,7 +43,12 @@
   </main>
 
   <div id="app-container" style="display:none">
-    <aside class="sidebar cartoon-card" aria-label="Main navigation">
+    <div class="app-navigation" aria-label="Page navigation">
+      <button id="menu-toggle" class="app-nav-control" type="button" aria-label="Open sidebar" aria-controls="app-sidebar" aria-expanded="false" onclick="toggleSidebar()"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+      <button id="global-back" class="app-nav-control" type="button" aria-label="Back" onclick="goBack()" hidden><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
+    </div>
+    <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close sidebar" onclick="closeSidebar()" hidden></button>
+    <aside id="app-sidebar" class="sidebar cartoon-card" aria-label="Main navigation" aria-hidden="true">
       <a class="brand-logo-container" href="#" aria-label="Flâsh Pro home" onclick="switchTab('ai-chat'); return false">
         <img src="logo.png" alt="Flâsh Pro" class="brand-logo">
       </a>
@@ -81,7 +86,7 @@
       </section>
 
       <section id="private-chat-win" class="tab-pane">
-        <header class="header-bar"><button class="back-btn" onclick="switchTab('private-inbox')" aria-label="Back to private chats"><i class="fa-solid fa-arrow-left"></i></button><div class="chat-title"><p class="eyebrow">PRIVATE CONVERSATION</p><h2 id="target-username">Chat</h2></div><span class="online-dot" title="Live chat"></span></header>
+        <header class="header-bar"><div class="chat-title"><p class="eyebrow">PRIVATE CONVERSATION</p><h2 id="target-username">Chat</h2></div><span class="online-dot" title="Live chat"></span></header>
         <div id="private-logs" class="chat-area"></div>
         <div class="chat-input-bar"><input type="text" id="private-msg" placeholder="စာရိုက်ပါ..." maxlength="2000" autocomplete="off"><button aria-label="Send private message" onclick="sendPrivateMsg()"><i class="fa-solid fa-paper-plane"></i></button></div>
       </section>
@@ -94,7 +99,7 @@
 
       <section id="downloader" class="tab-pane">
         <header class="header-bar"><div><p class="eyebrow">SAVE A CLIP FOR LATER</p><h2>🎬 Video Downloader</h2></div></header>
-        <div class="feature-page"><div class="feature-card cartoon-card"><div class="feature-illustration">📹<span>✨</span></div><h3>Drop a video link</h3><p>YouTube နဲ့ TikTok link တွေကို ခွင့်ပြုထားတဲ့ downloader instance မှတစ်ဆင့် ရယူပါ။</p><label class="sr-only" for="dl-url">Video URL</label><input type="url" id="dl-url" placeholder="https://youtu.be/..." autocomplete="url"><button class="btn-primary" onclick="downloadVideo()"><i class="fa-solid fa-download"></i> Get download links</button><div id="dl-result" class="result-box" aria-live="polite"></div></div></div>
+        <div class="feature-page"><div class="feature-card cartoon-card"><div class="feature-illustration">📹<span>✨</span></div><h3>Drop a video link</h3><p>YouTube, TikTok နဲ့ Facebook-ийн public video link-ийг зөвшөөрөлтэй downloader instance-ээр татна.</p><label class="sr-only" for="dl-url">Video URL</label><input type="url" id="dl-url" placeholder="YouTube / TikTok / Facebook URL" autocomplete="url"><button class="btn-primary" onclick="downloadVideo()"><i class="fa-solid fa-download"></i> Download video</button><div id="dl-result" class="result-box" aria-live="polite"></div></div></div>
       </section>
 
       <section id="music" class="tab-pane">
