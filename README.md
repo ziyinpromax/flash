@@ -7,7 +7,7 @@ Flâsh Pro သည် animated cartoon UI ပါသော chat/web app ဖြစ�
 - AI chat — provider တစ်ခုစီအတွက် ကိုယ်ပိုင် key၊ Enter ဖြင့်ပို့ခြင်း
 - Search Friends — Private Chats inbox မှ သီးခြားစာမျက်နှာ
 - Private chat နှင့် Group chat — Socket.IO real-time messaging
-- Video downloader — ကိုယ်တိုင် host လုပ်ထားသော သို့မဟုတ် အသုံးပြုခွင့်ရ Cobalt API instance မှတစ်ဆင့်
+- Video downloader — server ပေါ်က yt-dlp ကို အသုံးပြုပြီး YouTube, TikTok နှင့် Facebook public video များကို ဒေါင်းလုဒ်လုပ်ခြင်း
 - Music library — audio upload, playback, delete; Supabase Storage ကို ရွေးချယ်အသုံးပြုနိုင်ခြင်း
 - Cartoon animation — nav, cards, buttons, message bubbles, modals နှင့် forms တစ်လျှောက် motion; reduced-motion preference ကို လေးစားသည်
 
@@ -75,9 +75,7 @@ ChatGPT account subscription နဲ့ OpenAI API access/key သည် သီး
 
 ## Video downloader
 
-Cobalt က ၎င်းတို့၏ hosted API instance ကို အခြား app များက ခွင့်ပြုချက်မရှိဘဲ သုံးရန် မရည်ရွယ်ထားကြောင်းနှင့် ကိုယ်ပိုင် instance သို့မဟုတ် ခွင့်ပြုချက်ရ instance ကို အသုံးပြုရန် မှတ်ချက်ပြုထားသည် ([Cobalt API docs](https://github.com/imputnet/cobalt/blob/main/docs/api.md), [Cobalt API README](https://github.com/imputnet/cobalt/blob/main/api/README.md))။ ဒါကြောင့် app က hard-coded public endpoint ကို မခေါ်တော့ပါ။
-
-ကိုယ်ပိုင် သို့မဟုတ် ခွင့်ပြုချက်ရ Cobalt instance ကို `.env` ထဲတွင် သတ်မှတ်ပါ။ API key လိုအပ်သော instance ဖြစ်လျှင်သာ key သတ်မှတ်ပါ။ `COBALT_API_URL` မရှိပါက downloader က မပြင်ဆင်ရသေးကြောင်း အကြောင်းကြားမည်။
+Downloader သည် YouTube, TikTok နှင့် Facebook public video link များကို server ပေါ်က `yt-dlp` ဖြင့် စစ်ဆေးပြီး download လုပ်ပေးသည်။ Railway deployment အတွက် root `Dockerfile` က Python, `yt-dlp[default]` နှင့် FFmpeg ကို install လုပ်ပေးသည်။ `COBALT_API_URL` သို့မဟုတ် သီးခြား downloader API key မလိုပါ။ Download ဖိုင်တစ်ခုလျှင် 500 MB အထိသာဖြစ်ပြီး၊ platform အလိုက် bot detection သို့မဟုတ် access restriction ရှိလျှင် public link တချို့ မရနိုင်ပါ။
 
 ## အရေးကြီးသည့် runtime မှတ်ချက်များ
 

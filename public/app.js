@@ -314,7 +314,7 @@ async function downloadVideo() {
   const result = document.getElementById('dl-result');
   if (!url) return showModal('⚠️', 'Add a video link', 'YouTube, TikTok သို့မဟုတ် Facebook video link ထည့်ပါ။');
   result.replaceChildren();
-  showModal('🛠️', 'Preparing your link', 'Downloader ကို ချိတ်ဆက်နေပါသည်…');
+  showModal('🛠️', 'Preparing your link', 'Video link ကို စစ်ဆေးနေပါသည်…');
   try {
     const data = await jsonRequest('/api/download', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
