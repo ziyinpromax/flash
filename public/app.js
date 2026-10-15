@@ -3,6 +3,7 @@ let currentUser = '';
 let allUsers = [];
 let targetUser = '';
 let activePrivateRoom = '';
+let tabHistory = [];
 
 function showModal(icon, title, message, showProgress = false) {
   document.getElementById('modal-icon').textContent = icon;
@@ -23,16 +24,47 @@ function closeModal() {
   document.getElementById('cartoon-modal').style.display = 'none';
 }
 
-function switchTab(paneId, button) {
-  document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+function switchTab(paneId, button, remember = true) {
   const pane = document.getElementById(paneId);
   if (!pane) return;
+  const currentPaneId = document.querySelector('.tab-pane.active')?.id;
+  if (remember && currentPaneId && currentPaneId !== paneId) tabHistory.push(currentPaneId);
+  document.querySelectorAll('.tab-pane').forEach(item => item.classList.remove('active'));
   pane.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(nav => nav.classList.remove('active'));
   const navId = paneId === 'private-chat-win' ? 'private-inbox' : paneId;
   const activeNav = document.querySelector(`.nav-btn[onclick*="'${navId}'"]`);
   if (activeNav) activeNav.classList.add('active');
   if (button?.classList.contains('nav-btn')) button.classList.add('active');
+  closeSidebar();
+  updateBackButton();
+}
+
+function updateBackButton() {
+  const button = document.getElementById('global-back');
+  if (button) button.hidden = tabHistory.length === 0;
+}
+
+function goBack() {
+  const previousPane = tabHistory.pop();
+  if (previousPane) switchTab(previousPane, null, false);
+  else updateBackButton();
+}
+
+function toggleSidebar(forceOpen) {
+  const sidebar = document.getElementById('app-sidebar');
+  const toggle = document.getElementById('menu-toggle');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const open = typeof forceOpen === 'boolean' ? forceOpen : !sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', open);
+  sidebar.setAttribute('aria-hidden', String(!open));
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.setAttribute('aria-label', open ? 'Close sidebar' : 'Open sidebar');
+  backdrop.hidden = !open;
+}
+
+function closeSidebar() {
+  if (document.getElementById('app-sidebar')) toggleSidebar(false);
 }
 
 async function jsonRequest(url, options = {}) {
@@ -280,7 +312,7 @@ function addDownloadLink(container, url, label) {
 async function downloadVideo() {
   const url = document.getElementById('dl-url').value.trim();
   const result = document.getElementById('dl-result');
-  if (!url) return showModal('⚠️', 'Add a video link', 'TikTok သို့မဟုတ် YouTube link ထည့်ပါ။');
+  if (!url) return showModal('⚠️', 'Add a video link', 'YouTube, TikTok သို့မဟုတ် Facebook video link ထည့်ပါ။');
   result.replaceChildren();
   showModal('🛠️', 'Preparing your link', 'Downloader ကို ချိတ်ဆက်နေပါသည်…');
   try {
@@ -429,8 +461,10 @@ async function clearApiKey(provider) {
 
 function enterApp(username) {
   currentUser = username;
+  tabHistory = [];
   document.getElementById('auth-container').style.display = 'none';
   document.getElementById('app-container').style.display = 'flex';
+  switchTab('ai-chat', null, false);
   renderConversations();
   loadUsers();
   loadMusic();
@@ -454,6 +488,9 @@ async function logout() {
     currentUser = '';
     targetUser = '';
     activePrivateRoom = '';
+    tabHistory = [];
+    closeSidebar();
+    updateBackButton();
     document.getElementById('app-container').style.display = 'none';
     document.getElementById('auth-container').style.display = 'flex';
     document.getElementById('auth-pass').value = '';
@@ -463,6 +500,9 @@ async function logout() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.getElementById('app-sidebar').classList.contains('open')) closeSidebar();
+  });
   document.querySelectorAll('#ai-prompt, #private-msg, #group-msg').forEach(input => {
     input.addEventListener('keydown', event => {
       if (event.key === 'Enter' && !event.shiftKey) {

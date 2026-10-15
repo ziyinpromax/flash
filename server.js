@@ -322,7 +322,8 @@ function isAllowedVideoUrl(rawUrl) {
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
     const host = parsed.hostname.toLowerCase();
     return host === 'youtu.be' || host === 'youtube.com' || host.endsWith('.youtube.com') ||
-      host === 'tiktok.com' || host.endsWith('.tiktok.com');
+      host === 'tiktok.com' || host.endsWith('.tiktok.com') ||
+      host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.watch' || host.endsWith('.fb.watch');
   } catch {
     return false;
   }
@@ -331,7 +332,7 @@ function isAllowedVideoUrl(rawUrl) {
 app.post('/api/download', requireAuth, async (req, res) => {
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
   if (!isAllowedVideoUrl(url)) {
-    return res.status(400).json({ success: false, error: 'မှန်ကန်သော YouTube သို့မဟုတ် TikTok video link ထည့်ပါ။' });
+    return res.status(400).json({ success: false, error: 'မှန်ကန်သော YouTube, TikTok သို့မဟုတ် Facebook video link ထည့်ပါ။' });
   }
   if (!COBALT_API_URL) {
     return res.status(503).json({ success: false, error: 'Downloader API မသတ်မှတ်ရသေးပါ။ Server admin က ခွင့်ပြုထားသော Cobalt instance ကို COBALT_API_URL ဖြင့် သတ်မှတ်ရပါမည်။' });
