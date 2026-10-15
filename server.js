@@ -5,9 +5,7 @@ const { Server } = require('socket.io');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
-const multer = require('multer');
 const path = require('path');
-const fs = require('fs/promises');
 const crypto = require('crypto');
 const { GoogleGenAI } = require('@google/genai');
 const Groq = require('groq-sdk');
@@ -17,7 +15,6 @@ const server = http.createServer(app);
 const io = new Server(server);
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const SESSION_SECRET = process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'local-development-only-session-secret');
 
 if (!SESSION_SECRET) {
@@ -27,7 +24,6 @@ if (!SESSION_SECRET) {
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zghlmevmxgonupbiszok.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnaGxtZXZteGdvbnVwYmlzem9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5NjU2MjIsImV4cCI6MjEwNzU0MTYyMn0.LEMRj1OA5d_1U2y1zpveLD_cTxQdxw3eEjidKbAXWBc';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || '';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
@@ -313,80 +309,6 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
   }
 });
 
-// Music upload. Files are local to the server; use persistent storage for deployments with ephemeral disks.
-const allowedAudioExtensions = new Set(['.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.webm']);
-const storage = multer.diskStorage({
-  destination: async (_req, _file, cb) => {
-    try { await fs.mkdir(UPLOAD_DIR, { recursive: true }); cb(null, UPLOAD_DIR); }
-    catch (error) { cb(error); }
-  },
-  filename: (_req, file, cb) => cb(null, `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${path.extname(file.originalname).toLowerCase()}`)
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 25 * 1024 * 1024, files: 1 },
-  fileFilter: (_req, file, cb) => {
-    const extension = path.extname(file.originalname).toLowerCase();
-    if (!allowedAudioExtensions.has(extension) || !file.mimetype.startsWith('audio/')) {
-      return cb(new Error('MP3/WAV/OGG/M4A/AAC/FLAC/WebM အသံဖိုင်များကိုသာ တင်နိုင်ပါသည်။'));
-    }
-    cb(null, true);
-  }
-});
-
-app.post('/api/music/upload', requireAuth, upload.single('audio'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, error: 'အသံဖိုင်ကို ရွေးပါ။' });
-  const folder = typeof req.body?.folder === 'string' ? req.body.folder.trim().slice(0, 60) : 'General';
-  const title = path.basename(req.file.originalname).slice(0, 180);
-  let fileUrl = `/uploads/${req.file.filename}`;
-  let storedRemotely = false;
-  try {
-    if (STORAGE_BUCKET) {
-      const fileBuffer = await fs.readFile(req.file.path);
-      const { error: storageError } = await supabase.storage.from(STORAGE_BUCKET).upload(req.file.filename, fileBuffer, {
-        contentType: req.file.mimetype,
-        upsert: false
-      });
-      if (storageError) throw storageError;
-      storedRemotely = true;
-      fileUrl = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(req.file.filename).data.publicUrl;
-    }
-    const { error } = await supabase.from('music').insert([{
-      title, file_url: fileUrl, uploader: req.session.user, folder: folder || 'General'
-    }]);
-    if (error) throw error;
-    if (storedRemotely) await fs.unlink(req.file.path).catch(() => {});
-    res.json({ success: true });
-  } catch (err) {
-    if (storedRemotely) await supabase.storage.from(STORAGE_BUCKET).remove([req.file.filename]).catch(() => {});
-    await fs.unlink(req.file.path).catch(() => {});
-    console.error('Music upload failed:', err.message);
-    res.status(503).json({ success: false, error: 'သီချင်းဖိုင် သို့မဟုတ် အချက်အလက်ကို မသိမ်းနိုင်ပါ။ Supabase Storage/Database ကို စစ်ဆေးပါ။' });
-  }
-});
-
-app.get('/api/music/list', requireAuth, async (_req, res) => {
-  const { data, error } = await supabase.from('music').select('id,title,file_url,uploader,folder').order('id', { ascending: false });
-  if (error) return res.status(503).json({ success: false, error: 'သီချင်းစာရင်းကို မဖတ်နိုင်ပါ။' });
-  res.json(data || []);
-});
-
-app.delete('/api/music/delete/:id', requireAuth, async (req, res) => {
-  const id = req.params.id;
-  const { data: song, error: findError } = await supabase.from('music').select('id,uploader,file_url').eq('id', id).maybeSingle();
-  if (findError || !song) return res.status(404).json({ success: false, error: 'သီချင်း မတွေ့ပါ။' });
-  if (song.uploader !== req.session.user) return res.status(403).json({ success: false, error: 'ကိုယ်ပိုင်သီချင်းကိုသာ ဖျက်နိုင်ပါသည်။' });
-  const { error } = await supabase.from('music').delete().eq('id', id);
-  if (error) return res.status(503).json({ success: false, error: 'သီချင်းစာရင်းမှ ဖျက်မရပါ။' });
-  const basename = path.basename(song.file_url || '');
-  if (basename && STORAGE_BUCKET && song.file_url?.startsWith(`${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/`)) {
-    await supabase.storage.from(STORAGE_BUCKET).remove([basename]).catch(() => {});
-  } else if (basename && song.file_url?.startsWith('/uploads/')) {
-    await fs.unlink(path.join(UPLOAD_DIR, basename)).catch(() => {});
-  }
-  res.json({ success: true });
-});
-
 // Real-time chat: authenticate the socket and authorize every room/message on the server.
 const chatHistory = new Map();
 io.use((socket, next) => {
@@ -418,11 +340,6 @@ io.on('connection', socket => {
 });
 
 app.use((err, _req, res, _next) => {
-  if (err instanceof multer.MulterError) {
-    const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
-    return res.status(status).json({ success: false, error: err.code === 'LIMIT_FILE_SIZE' ? 'ဖိုင်အရွယ်အစား 25 MB ထက်မကျော်ရပါ။' : 'Upload ဖိုင်ကို လက်ခံမရပါ။' });
-  }
-  if (err.message?.startsWith('MP3/')) return res.status(400).json({ success: false, error: err.message });
   console.error('Unhandled request error:', err.message);
   res.status(500).json({ success: false, error: 'Server အမှားတစ်ခု ဖြစ်ပွားခဲ့ပါသည်။' });
 });
