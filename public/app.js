@@ -5,19 +5,11 @@ let targetUser = '';
 let activePrivateRoom = '';
 let tabHistory = [];
 
-function showModal(icon, title, message, showProgress = false) {
+function showModal(icon, title, message) {
   document.getElementById('modal-icon').textContent = icon;
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-msg').textContent = message;
-  document.getElementById('progress-container').style.display = showProgress ? 'block' : 'none';
-  if (showProgress) updateProgress(0);
   document.getElementById('cartoon-modal').style.display = 'flex';
-}
-
-function updateProgress(percent) {
-  const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
-  document.getElementById('progress-bar-fill').style.width = `${safePercent}%`;
-  document.getElementById('progress-text').textContent = `${safePercent}%`;
 }
 
 function closeModal() {
@@ -299,92 +291,6 @@ async function sendAiPrompt() {
   }
 }
 
-function selectedMusicFile() {
-  const file = document.getElementById('music-file').files[0];
-  document.getElementById('selected-file').textContent = file ? `${file.name} · ${(file.size / (1024 * 1024)).toFixed(1)} MB` : 'No file chosen';
-}
-
-function uploadMusic() {
-  const input = document.getElementById('music-file');
-  const file = input.files[0];
-  if (!file) return showModal('🎵', 'Choose a song', 'တင်လိုတဲ့ audio ဖိုင်ကို အရင်ရွေးပါ။');
-  if (file.size > 25 * 1024 * 1024) return showModal('📦', 'File is too large', 'ဖိုင်အရွယ်အစား 25 MB ထက်မကျော်ရပါ။');
-  const formData = new FormData();
-  formData.append('audio', file);
-  formData.append('folder', document.getElementById('folder-name').value.trim() || 'General');
-  showModal('☁️', 'Uploading your song', 'ခဏစောင့်ပေးပါ…', true);
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/music/upload', true);
-  xhr.withCredentials = true;
-  xhr.upload.onprogress = event => { if (event.lengthComputable) updateProgress(Math.round(event.loaded / event.total * 100)); };
-  xhr.onload = () => {
-    const data = (() => { try { return JSON.parse(xhr.responseText); } catch { return {}; } })();
-    closeModal();
-    if (xhr.status >= 200 && xhr.status < 300 && data.success) {
-      input.value = '';
-      selectedMusicFile();
-      showModal('🎉', 'Song uploaded!', 'သီချင်းကို library ထဲ ထည့်ပြီးပါပြီ။');
-      loadMusic();
-    } else {
-      showModal('😿', 'Upload did not finish', data.error || `Upload failed (${xhr.status || 'network error'})`);
-    }
-  };
-  xhr.onerror = () => { closeModal(); showModal('😿', 'Upload failed', 'Network သို့မဟုတ် server ကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ။'); };
-  xhr.send(formData);
-}
-
-async function loadMusic() {
-  const container = document.getElementById('music-list');
-  try {
-    const list = await jsonRequest('/api/music/list');
-    container.replaceChildren();
-    if (!list.length) return container.append(makeNotice('ဒီ jukebox ထဲမှာ သီချင်းမရှိသေးပါ။'));
-    list.forEach(song => {
-      const card = document.createElement('article');
-      card.className = 'music-card cartoon-card';
-      const heading = document.createElement('div');
-      heading.className = 'music-header';
-      const details = document.createElement('div');
-      const title = document.createElement('strong');
-      title.textContent = `📂 ${song.folder || 'General'} · ${song.title}`;
-      const uploader = document.createElement('small');
-      uploader.textContent = `Uploaded by ${song.uploader}`;
-      details.append(title, uploader);
-      heading.append(details);
-      if (song.uploader === currentUser) {
-        const remove = document.createElement('button');
-        remove.className = 'delete-btn';
-        remove.type = 'button';
-        remove.textContent = 'Delete';
-        remove.addEventListener('click', () => deleteMusic(song.id));
-        heading.append(remove);
-      }
-      const audio = document.createElement('audio');
-      audio.controls = true;
-      audio.preload = 'none';
-      if (typeof song.file_url === 'string') {
-        try {
-          const source = new URL(song.file_url, window.location.origin);
-          const localUpload = source.origin === window.location.origin && source.pathname.startsWith('/uploads/');
-          if (localUpload || source.protocol === 'https:') audio.src = source.href;
-        } catch { /* Ignore malformed audio URLs from the database. */ }
-      }
-      card.append(heading, audio);
-      container.append(card);
-    });
-  } catch (error) {
-    container.replaceChildren(makeNotice(error.message));
-  }
-}
-
-async function deleteMusic(id) {
-  if (!confirm('ဒီသီချင်းကို ဖျက်မှာ သေချာပါသလား?')) return;
-  try {
-    await jsonRequest(`/api/music/delete/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    await loadMusic();
-  } catch (error) { showModal('😿', 'Could not delete', error.message); }
-}
-
 async function refreshKeyStatus() {
   const providers = ['gemini', 'groq', 'deepseek', 'openai', 'xai', 'manus'];
   try {
@@ -431,7 +337,6 @@ function enterApp(username) {
   switchTab('ai-chat', null, false);
   renderConversations();
   loadUsers();
-  loadMusic();
   refreshKeyStatus();
   if (!socket.connected) socket.connect();
 }
@@ -477,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-  document.getElementById('music-file').addEventListener('change', selectedMusicFile);
   document.getElementById('auth-pass').addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
   restoreSession();
 });
