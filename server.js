@@ -118,7 +118,7 @@ function asyncRoute(handler) {
   return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 }
 function jsonError(res, status, message) { return res.status(status).json({ success: false, error: message }); }
-function userById(id) { return supabase.from('users').select('id,username,display_name,avatar_url,last_seen_at,password').eq('id', id).maybeSingle(); }
+function userById(id) { return supabase.from('users').select('id,username,display_name,avatar_url,last_seen_at,password,recovery_secret_hash').eq('id', id).maybeSingle(); }
 function publicProfile(user) {
   return {
     id: user.id,
@@ -145,6 +145,7 @@ function rateLimit({ windowMs = 60_000, max = 12, key = req => req.ip || 'unknow
 }
 function validUsername(value) { return typeof value === 'string' && /^[a-z0-9_.-]{3,24}$/.test(value); }
 function validPassword(value) { return typeof value === 'string' && value.length >= 6 && value.length <= 8; }
+function validRecoverySecret(value) { return typeof value === 'string' && value.trim().length >= 4 && value.trim().length <= 128; }
 function sessionPromise(req, method) {
   return new Promise((resolve, reject) => req.session[method](err => err ? reject(err) : resolve()));
 }
@@ -158,7 +159,7 @@ async function requireAuth(req, res, next) {
       user = result.data;
     } else if (req.session?.username || req.session?.user) {
       const legacyName = req.session.username || req.session.user;
-      const result = await supabase.from('users').select('id,username,display_name,avatar_url,last_seen_at,password').eq('username', legacyName).maybeSingle();
+      const result = await supabase.from('users').select('id,username,display_name,avatar_url,last_seen_at,password,recovery_secret_hash').eq('username', legacyName).maybeSingle();
       if (result.error) throw result.error;
       user = result.data;
       if (user) { req.session.userId = user.id; req.session.username = user.username; await sessionPromise(req, 'save'); }
@@ -272,11 +273,13 @@ app.post('/api/register', rateLimit({ windowMs: 60_000, max: 8 }), asyncRoute(as
   const username = String(req.body?.username || '').trim();
   const displayName = String(req.body?.displayName || username).trim().slice(0, 48);
   const password = String(req.body?.password || '');
+  const recoverySecret = String(req.body?.recoverySecret || '').trim();
   if (!validUsername(username)) return jsonError(res, 400, 'Username ကို စာလုံးအသေး၊ ဂဏန်း၊ underscore၊ dot၊ hyphen ၃ မှ ၂၄ လုံးအတွင်း ထည့်ပါ။');
   if (!validPassword(password)) return jsonError(res, 400, 'Password ကို ၆ လုံးမှ ၈ လုံးအတွင်း ထည့်ပါ။');
-  const hashedPassword = await bcrypt.hash(password, 12);
+  if (!validRecoverySecret(recoverySecret)) return jsonError(res, 400, 'Recovery code/name ကို အနည်းဆုံး ၄ လုံး ထည့်ပါ။');
+  const [hashedPassword, recoveryHash] = await Promise.all([bcrypt.hash(password, 12), bcrypt.hash(recoverySecret, 12)]);
   const { data: user, error } = await supabase.from('users').insert({
-    username, password: hashedPassword, display_name: displayName || username
+    username, password: hashedPassword, display_name: displayName || username, recovery_secret_hash: recoveryHash
   }).select('id,username,display_name,avatar_url,last_seen_at').single();
   if (error) {
     if (error.code === '23505') return jsonError(res, 409, 'ဤ username ကို အသုံးပြုထားပြီးပါပြီ။ အခြား username သုံးပါ။');
@@ -297,7 +300,7 @@ app.post('/api/login', rateLimit({ windowMs: 60_000, max: 12 }), asyncRoute(asyn
   const password = String(req.body?.password || '');
   if (!validUsername(username) || !password) return jsonError(res, 400, 'Username နဲ့ password မှန်ကန်စွာ ဖြည့်ပါ။');
   const { data: user, error } = await supabase.from('users')
-    .select('id,username,display_name,avatar_url,last_seen_at,password')
+    .select('id,username,display_name,avatar_url,last_seen_at,password,recovery_secret_hash')
     .eq('username', username).maybeSingle();
   if (error) throw error;
   if (!user || !await bcrypt.compare(password, user.password)) return jsonError(res, 401, 'Username သို့မဟုတ် Password မှားယွင်းနေပါသည်။');
@@ -309,7 +312,41 @@ app.post('/api/login', rateLimit({ windowMs: 60_000, max: 12 }), asyncRoute(asyn
   res.json({ success: true, username: user.username, userId: user.id });
 }));
 
-app.get('/api/profile', requireAuth, (req, res) => res.json({ success: true, profile: publicProfile(req.user) }));
+app.post('/api/password/recovery/verify', rateLimit({ windowMs: 15 * 60_000, max: 8 }), asyncRoute(async (req, res) => {
+  const username = String(req.body?.username || '').trim().toLowerCase();
+  const secret = String(req.body?.recoverySecret || '').trim();
+  if (!validUsername(username) || !secret) return jsonError(res, 400, 'Username နှင့် recovery code/name ကို ဖြည့်ပါ။');
+  const { data: user, error } = await supabase.from('users').select('id,recovery_secret_hash').eq('username', username).maybeSingle();
+  if (error) throw error;
+  if (!user?.recovery_secret_hash || !await bcrypt.compare(secret, user.recovery_secret_hash)) return jsonError(res, 401, 'Username သို့မဟုတ် recovery code/name မကိုက်ညီပါ။');
+  const token = crypto.randomBytes(32).toString('base64url');
+  const now = new Date();
+  const { error: cleanupError } = await supabase.from('password_recovery_tickets').delete().lt('expires_at', now.toISOString());
+  if (cleanupError) throw cleanupError;
+  const { error: ticketError } = await supabase.from('password_recovery_tickets').insert({
+    token_hash: crypto.createHash('sha256').update(token).digest('hex'),
+    user_id: user.id, expires_at: new Date(Date.now() + 10 * 60_000).toISOString()
+  });
+  if (ticketError) throw ticketError;
+  res.json({ success: true, resetToken: token, message: 'Recovery အတည်ပြုပြီးပါပြီ။ Password အသစ်ကို သတ်မှတ်ပါ။' });
+}));
+app.post('/api/password/recovery/reset', rateLimit({ windowMs: 15 * 60_000, max: 8 }), asyncRoute(async (req, res) => {
+  const token = String(req.body?.resetToken || '');
+  const password = String(req.body?.newPassword || '');
+  if (!validPassword(password)) return jsonError(res, 400, 'Password အသစ်ကို ၆ လုံးမှ ၈ လုံးအတွင်း ထည့်ပါ။');
+  if (!/^[A-Za-z0-9_-]{32,80}$/.test(token)) return jsonError(res, 401, 'Recovery အတည်ပြုချက် သက်တမ်းကုန်သွားပါပြီ။ ပြန်လည်စစ်ဆေးပါ။');
+  const hash = await bcrypt.hash(password, 12);
+  const { data, error } = await supabase.rpc('flash_reset_password', {
+    p_token_hash: crypto.createHash('sha256').update(token).digest('hex'), p_password_hash: hash
+  });
+  if (error) throw error;
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result?.user_id) return jsonError(res, 401, 'Recovery အတည်ပြုချက် သက်တမ်းကုန်သွားပါပြီ။ ပြန်လည်စစ်ဆေးပါ။');
+  await revokeUserSessions(result.user_id);
+  res.json({ success: true, message: 'Password အသစ်ကို သိမ်းပြီးပါပြီ။ ပြန်ဝင်နိုင်ပါပြီ။' });
+}));
+
+app.get('/api/profile', requireAuth, (req, res) => res.json({ success: true, profile: publicProfile(req.user), recoveryConfigured: Boolean(req.user.recovery_secret_hash) }));
 app.patch('/api/profile', requireAuth, asyncRoute(async (req, res) => {
   let displayName = req.user.display_name || req.user.username;
   let username = req.user.username;
@@ -347,6 +384,17 @@ app.patch('/api/profile/password', requireAuth, asyncRoute(async (req, res) => {
   await revokeUserSessions(req.user.id, req.sessionID);
   res.json({ success: true, message: 'Password ပြောင်းပြီးပါပြီ။' });
 }));
+app.put('/api/profile/recovery-secret', requireAuth, asyncRoute(async (req, res) => {
+  const currentPassword = String(req.body?.currentPassword || '');
+  const recoverySecret = String(req.body?.recoverySecret || '').trim();
+  if (!await bcrypt.compare(currentPassword, req.user.password)) return jsonError(res, 401, 'လက်ရှိ password မမှန်ပါ။');
+  if (!validRecoverySecret(recoverySecret)) return jsonError(res, 400, 'Recovery code/name ကို အနည်းဆုံး ၄ လုံး ထည့်ပါ။');
+  const recoveryHash = await bcrypt.hash(recoverySecret, 12);
+  const { error } = await supabase.from('users').update({ recovery_secret_hash: recoveryHash }).eq('id', req.user.id);
+  if (error) throw error;
+  res.json({ success: true, message: 'Recovery code/name ကို လုံခြုံစွာ သိမ်းပြီးပါပြီ။' });
+}));
+
 const imageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 }, fileFilter: (_req, file, cb) => {
   const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
   if (!allowed.has(file.mimetype)) return cb(new Error('JPG, PNG, WEBP သို့မဟုတ် GIF ပုံကိုသာ တင်နိုင်ပါသည်။'));

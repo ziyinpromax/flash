@@ -39,9 +39,32 @@
         <input type="text" id="auth-user" placeholder="Username (စာလုံးအသေးသာ)" autocomplete="username" maxlength="24" pattern="[a-z0-9_.-]{3,24}">
         <label class="sr-only" for="auth-pass">Password</label>
         <input type="password" id="auth-pass" placeholder="Password (အသစ် ၆–၈ လုံး၊ အကောင့်ဟောင်းမှာ ပိုရှည်နိုင်)" autocomplete="current-password" maxlength="128">
+        <div id="register-recovery-field">
+          <label class="sr-only" for="recovery-secret">Recovery code/name</label>
+          <input type="password" id="recovery-secret" placeholder="ကိုယ်မှတ်မိမည့် Recovery code/name" minlength="4" maxlength="128" autocomplete="off">
+          <p class="warning-note">သတိပြုရန် — Recovery code/name ကို သီးသန့်မှတ်ထားပါ။ Username နှင့် code မှန်လျှင် password အသစ်ပြောင်းနိုင်မည်ဖြစ်ပြီး လက်ရှိ password ကို ပြန်မပြပါ။</p>
+        </div>
         <button class="btn-primary" onclick="login()"><i class="fa-solid fa-bolt"></i> Login</button>
         <button class="btn-secondary" onclick="register()"><i class="fa-solid fa-wand-magic-sparkles"></i> Create account</button>
+        <button class="text-link" type="button" onclick="showForgotPassword()">Forgot password?</button>
       </div>
+      <section id="forgot-panel" class="forgot-panel" hidden>
+        <h3>Password ပြန်သတ်မှတ်ရန်</h3>
+        <p class="warning-note">Username နှင့် သင်သတ်မှတ်ထားသော Recovery code/name ကိုစစ်ပါမည်။ လက်ရှိ password ကို ပြန်ပြနိုင်ခြင်းမရှိပါ။ မှန်ကန်ပါက password အသစ် သတ်မှတ်နိုင်ပါမည်။</p>
+        <label class="sr-only" for="recover-username">Username</label>
+        <input id="recover-username" type="text" placeholder="Username" maxlength="24" autocomplete="username">
+        <label class="sr-only" for="recover-secret">Recovery code/name</label>
+        <input id="recover-secret" type="password" placeholder="Recovery code/name" maxlength="128" autocomplete="off">
+        <button class="btn-primary" id="verify-recovery-button" onclick="verifyRecovery()">Verify recovery details</button>
+        <div id="reset-password-fields" hidden>
+          <label class="sr-only" for="reset-new-password">New password</label>
+          <input id="reset-new-password" type="password" placeholder="New password (၆–၈ လုံး)" minlength="6" maxlength="8" autocomplete="new-password">
+          <label class="sr-only" for="reset-confirm-password">Confirm new password</label>
+          <input id="reset-confirm-password" type="password" placeholder="Confirm new password" minlength="6" maxlength="8" autocomplete="new-password">
+          <button class="btn-primary" onclick="finishPasswordReset()">Save new password</button>
+        </div>
+        <button class="text-link" type="button" onclick="hideForgotPassword()">Back to Login</button>
+      </section>
       <p class="tiny-note">Your AI keys stay private to your account.</p>
     </section>
   </main>
@@ -140,6 +163,12 @@
           <label class="sr-only" for="new-password">New password</label><input type="password" id="new-password" placeholder="Password အသစ် (၆–၈ လုံး)" minlength="6" maxlength="8" autocomplete="new-password">
           <label class="sr-only" for="confirm-new-password">Confirm new password</label><input type="password" id="confirm-new-password" placeholder="Password အသစ်ကို ထပ်မံထည့်ပါ" minlength="6" maxlength="8" autocomplete="new-password">
           <button class="btn-primary" onclick="changePassword()">Change password</button>
+          <div class="settings-divider"></div>
+          <h3>Forgot password тохиргоо</h3>
+          <p class="warning-note">Username နှင့် ကိုယ်တိုင်သတ်မှတ်ထားသော Recovery code/name ကိုက်ညီမှ password အသစ်ပြောင်းနိုင်ပါမည်။ Code/name ကို လုံခြုံစွာ မှတ်ထားပါ။ လက်ရှိ password ကို app က ပြန်ဖော်ပြမည်မဟုတ်ပါ။ အကောင့်ဟောင်းတွင် recovery code မသတ်မှတ်ရသေးပါက login ဝင်ပြီး ဤနေရာတွင် တစ်ကြိမ်သတ်မှတ်ပါ။</p>
+          <label class="sr-only" for="recovery-current-password">Current password</label><input type="password" id="recovery-current-password" placeholder="လက်ရှိ password ဖြင့် အတည်ပြုပါ" maxlength="128" autocomplete="current-password">
+          <label class="sr-only" for="profile-recovery-secret">Recovery code/name</label><input type="password" id="profile-recovery-secret" placeholder="Recovery code/name (အနည်းဆုံး ၄ လုံး)" maxlength="128" autocomplete="off">
+          <button class="btn-secondary" onclick="saveRecoverySecret()">Save recovery code/name</button>
           <div class="settings-divider"></div><button class="btn-secondary logout-button" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>
         </div></div>
       </section>
